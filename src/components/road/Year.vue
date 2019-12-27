@@ -1,8 +1,8 @@
 <template>
-  <article>
-    <span class="year">{{`Year ${year+1}`}}</span>
+  <article class="year">
+    <span class="year-header">{{`Year ${idx+1}`}}</span>
     <section v-for="(quarter, i) in year" :key="`year ${idx} quarter ${i}`">
-      <span class="header">{{quarter_label(i)}}</span>
+      <span class="quarter-header">{{quarter_label(i)}}</span>
       <div>
         <card-vue
           v-for="course in quarter"
@@ -19,7 +19,7 @@ import CardVue from "./Card.vue";
 import { Road } from "@/store/road";
 export default Vue.extend({
   components: { CardVue },
-  props: { year: Object as () => string[][], idx: Number },
+  props: { year: Array as () => string[][], idx: Number },
   methods: {
     quarter_label(idx: 0 | 1 | 2 | 3) {
       switch (idx) {

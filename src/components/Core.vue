@@ -1,23 +1,171 @@
 <template>
   <main>
-    <aside>
+    <aside class="requirements">
       <!--TODO Requirements-->
     </aside>
     <section>
-      <span>
-        <!--TODO Header-->
+      <span class="header">
+        <!---->
       </span>
-      <nav>
-        <!--TODO Road Navigation-->
+      <nav class="roads">
+        <span class="road-list">
+          <span
+            v-for="(name, idx) in roadNames"
+            :key="idx"
+            class="road-title"
+            :selected="viewing===idx"
+            @click="view(idx)"
+            @dblclick="edit(idx)"
+          >
+            <p v-if="editing!==idx">{{name}}</p>
+            <input
+              type="text"
+              name="road-editor"
+              id="road-editor"
+              v-model="editingText"
+              @keydown.enter="editing=-1"
+              @blur="editing=-1"
+              @click.stop
+              v-else
+            />
+          </span>
+          <i v-if="viewing===-1">Create a new road! ---></i>
+        </span>
+        <button class="new-road" @click="newRoad">+</button>
       </nav>
-      <road-vue></road-vue>
+      <article v-if="viewing!==-1" class="road-display">
+        <year-vue v-for="(year, idx) in years" :key="`year ${idx}`" :year="year" :idx="idx"></year-vue>
+      </article>
+      <article v-else class="no-roads">
+        <i>Let's get started!</i>
+      </article>
     </section>
   </main>
 </template>
 <script lang="ts">
 import Vue from "vue";
-import RoadVue from "./road/Road.vue";
+import YearVue from "./road/Year.vue";
 export default Vue.extend({
-  components: { RoadVue }
+  components: { YearVue },
+  data() {
+    return { editing: -1, editingText: "" };
+  },
+  watch: {
+    editingText(next) {
+      if (this.editing > -1) {
+        this.$store.commit("roads/update_name", {
+          road: this.editing,
+          name: this.editingText
+        });
+      }
+    }
+  },
+  computed: {
+    viewing(): number {
+      return this.$store.state.roads.viewing;
+    },
+    viewableRoad(): boolean {
+      return this.viewing > -1;
+    },
+    roadNames(): string[] {
+      return this.$store.state.roads.course_roads.map(
+        (tup: [string, any]) => tup[0]
+      );
+    },
+    years(): string[][] {
+      return this.$store.state.roads.course_roads[this.viewing][1].years;
+    }
+  },
+  methods: {
+    newRoad(input: InputEvent) {
+      this.editing = this.$store.state.roads.course_roads.length;
+      this.editingText = "";
+      this.$store.commit("roads/new_road", "");
+      this.$nextTick(() => (input.target as any).focus());
+    },
+    view(idx: number) {
+      if (idx !== this.viewing) {
+        this.$store.state.roads.viewing = idx;
+        this.editing = -1;
+      }
+    },
+    edit(idx: number) {
+      this.editing = idx;
+      this.editingText = this.$store.state.roads.course_roads[idx][0];
+    }
+  }
 });
 </script>
+<style scoped>
+main {
+  display: flex;
+  flex-flow: row nowrap;
+  flex: 1;
+}
+.requirements {
+  flex: 0.25;
+  display: flex;
+  flex-flow: column nowrap;
+  background-color: #dddddd;
+}
+.requirements + * {
+  flex: 0.75;
+  display: flex;
+  flex-flow: column nowrap;
+}
+.header {
+  display: flex;
+  flex-flow: row nowrap;
+}
+.roads {
+  display: flex;
+  flex-flow: row nowrap;
+}
+.road-list {
+  display: flex;
+  flex-flow: row wrap;
+  flex: 1;
+  background-color: #eeeeee;
+  overflow: auto;
+}
+.road-title {
+  flex-basis: 150px;
+  flex-grow: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.road-title[selected] {
+  background-color: #0088ff44;
+}
+.new-road {
+  font-size: 2em;
+  height: 1.5em;
+  width: 1.5em;
+  border: none;
+  cursor: pointer;
+}
+.new-road:hover {
+  background-color: #0088ff44;
+}
+.new-road:active {
+  background-color: #0088ff88;
+}
+.road-display,
+.no-roads {
+  flex: 1;
+  display: flex;
+  flex-flow: column nowrap;
+}
+.no-roads {
+  justify-content: center;
+  align-items: center;
+}
+i {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+</style>

@@ -14,33 +14,36 @@ export class Road {
 }
 
 const road_state = {
-    course_roads: [] as Road[],
+    course_roads: [] as Array<[string, Road]>,
     viewing: -1,
 };
 
 export const roads: Module<typeof road_state, any> = {
     state: road_state,
     mutations: {
-        new_road(state) {
+        new_road(state, name: string) {
             state.viewing = state.course_roads.length;
-            state.course_roads.push(new Road());
+            state.course_roads.push([name, new Road()]);
         },
         add_year({ course_roads, viewing }) {
-            course_roads[viewing].years.push(make_year());
+            course_roads[viewing][1].years.push(make_year());
         },
         remove_year({ course_roads, viewing }, year: number) {
-            course_roads[viewing].years.splice(year, 1);
+            course_roads[viewing][1].years.splice(year, 1);
         },
         add_course({ course_roads, viewing },
             { year, quarter, course }: { year: number, quarter: Quarter, course: string }) {
-            course_roads[viewing].years[year][quarter].push(course);
+            course_roads[viewing][1].years[year][quarter].push(course);
         },
         remove_course({ course_roads, viewing },
             { year, quarter, idx }: { year: number, quarter: Quarter, idx: number }) {
-            course_roads[viewing].years[year][quarter].splice(idx, 1);
+            course_roads[viewing][1].years[year][quarter].splice(idx, 1);
         },
         view(state, road: number) {
             state.viewing = road;
+        },
+        update_name({ course_roads }, { road, name }: { road: number, name: string }) {
+            course_roads[road].splice(0, 1, name);
         }
     },
     namespaced: true,
