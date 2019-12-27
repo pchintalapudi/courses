@@ -77,7 +77,7 @@ export default Vue.extend({
     }
   },
   methods: {
-    newRoad(input: InputEvent) {
+    newRoad(input: any) {
       this.editing = this.$store.state.roads.course_roads.length;
       this.editingText = "";
       this.$store.commit("roads/new_road", "");
