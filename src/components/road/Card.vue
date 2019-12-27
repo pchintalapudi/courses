@@ -30,7 +30,7 @@ export default Vue.extend({
         length += fragments[i].length;
       }
       return fragments.slice(0, Math.max(i, 2)).join(" ");
-    }
-  }
+    },
+  },
 });
 </script>

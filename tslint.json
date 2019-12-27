@@ -20,6 +20,7 @@
         "ordered-imports": false,
         "quotemark": false,
         "variable-name": false,
-        "align": false
+        "align": false,
+        "trailing-comma": false
     }
 }

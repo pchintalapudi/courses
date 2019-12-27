@@ -8,7 +8,7 @@ function make_year(): string[][] {
 }
 
 // tslint:disable-next-line: max-classes-per-file
-class Road {
+export class Road {
     public years = [make_year(), make_year(), make_year(), make_year()];
     public requirements: string[] = [];
 }
@@ -39,6 +39,9 @@ export const roads: Module<typeof road_state, any> = {
             { year, quarter, idx }: { year: number, quarter: Quarter, idx: number }) {
             course_roads[viewing].years[year][quarter].splice(idx, 1);
         },
+        view(state, road: number) {
+            state.viewing = road;
+        }
     },
     namespaced: true,
 };
