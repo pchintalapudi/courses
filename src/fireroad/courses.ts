@@ -87,3 +87,7 @@ export class CourseRequester {
         return (await window.fetch(builder.build())).json();
     }
 }
+
+export function is_full_course(course: CourseJSON): course is FullCourseJSON {
+    return (course as FullCourseJSON).lecture_units !== undefined;
+}

@@ -1,9 +1,9 @@
 <template>
-  <div id="app">
-    <router-view />
-  </div>
+<main>
+    
+</main>
 </template>
 <script lang="ts">
-import Vue from 'vue';
+import Vue from "vue";
 export default Vue.extend({});
 </script>
