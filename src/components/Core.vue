@@ -5,7 +5,8 @@
     </aside>
     <section>
       <span class="header">
-        <!---->
+        <span class="auth">TODO Auth Stuff</span>
+        <search-vue class="search"></search-vue>
       </span>
       <nav class="roads">
         <span class="road-list">
@@ -45,8 +46,12 @@
 <script lang="ts">
 import Vue from "vue";
 import YearVue from "./road/Year.vue";
+import SearchVue from "./road/Search.vue";
 export default Vue.extend({
-  components: { YearVue },
+  created() {
+    this.$store.dispatch("classes/init");
+  },
+  components: { YearVue, SearchVue },
   data() {
     return { editing: -1, editingText: "" };
   },
@@ -167,5 +172,18 @@ i {
   display: flex;
   align-items: center;
   padding: 10px;
+}
+.auth {
+  flex: 1;
+}
+input {
+  border: solid #dddddd 1px;
+  border-radius: 5px;
+  padding: 5px;
+  margin: 5px;
+  width: 80%;
+}
+.search {
+    width: 500px;
 }
 </style>

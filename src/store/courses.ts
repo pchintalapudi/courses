@@ -1,44 +1,49 @@
-import { CourseJSON, FullCourseJSON, server_courses, is_full_course } from "@/fireroad/";
+import { CourseJSON, server_courses, is_full_course, Trie } from "@/fireroad/";
 import { Module } from "vuex";
 
 const classModuleState = {
     manifest: new Map<string, CourseJSON>(),
     loaded: new Set<string>(),
-    manifest_updated: 1,
+    manifest_updated: 0,
+    id_search_trie: new Trie()
 };
 
 export const classes: Module<typeof classModuleState, any> = {
     state: classModuleState,
     mutations: {
-        _load({ loaded }, dept: string) {
-            loaded.add(dept);
+        _load({ loaded }, dept_or_id: string) {
+            loaded.add(dept_or_id);
         },
-        _set_course(state, { id, course }: { id: string, course: CourseJSON }) {
-            state.manifest.set(id, course);
+        _set_course(state, course: CourseJSON) {
+            state.manifest.set(course.subject_id, course);
             state.manifest_updated += 1;
         },
+        _bulk_load(state, manifest: Map<string, CourseJSON>) {
+            state.manifest = manifest;
+            state.manifest_updated = 1;
+            manifest.forEach((v, k) => state.id_search_trie.add(k, v));
+        }
     },
     actions: {
-        async full({ state, dispatch }, id: string) {
+        async init({ commit }) {
+            const all_courses = await server_courses.all(false);
+            const course_map = new Map<string, CourseJSON>(all_courses.map((c) => [c.subject_id, c]));
+            commit("_bulk_load", course_map);
+        },
+        async load({ state, commit, dispatch }, id: string) {
             const course = state.manifest.get(id);
-            if (!course || !is_full_course(course)) { dispatch('_load_into_manifest', id); }
+            if ((!course || !is_full_course(course)) && !state.loaded.has(id)) {
+                commit('_load', id);
+                dispatch('_delay_manifest_load', await server_courses.load(id));
+            }
         },
-        async partial({ state, dispatch }, id: string) {
-            if (!state.manifest.has(id)) { dispatch('_load_into_manifest', id); }
-        },
-        async _load_into_manifest({ state, commit }, id: string) {
-            const single_promise = server_courses.load(id);
-            const dept = id.substring(0, id.indexOf("."));
-            const department_promise = state.loaded.has(dept) ?
-                new Promise<CourseJSON[]>([] as any) : server_courses.in_department(dept, false);
-            commit('_load', dept);
-            department_promise.then((courses) => courses.forEach((course) => {
-                if (!state.manifest.has(course.subject_id)) {
-                    commit('_set_course', { id: course.subject_id, course });
-                }
-            }));
-            commit('_set_course', { id, course: await single_promise });
-        },
+        _delay_manifest_load({ state, commit, dispatch }, course: CourseJSON) {
+            if (!state.manifest_updated) {
+                window.setTimeout(() => dispatch("_delay_manifest_load"), 1000);
+            } else {
+                commit('_set_course', course);
+            }
+        }
     },
     namespaced: true,
 };

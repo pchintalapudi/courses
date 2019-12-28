@@ -38,9 +38,9 @@ class _URLBuilder {
     }
 
     public build() {
-        const final = [this._protocol, '://', this._domain, ':', this._port, this._path.join('/'), '/'];
+        const final = [this._protocol, '://', this._domain, ':', this._port, '/', this._path.join('/'), '/'];
         if (this._query.length) {
-            final.push('?', this._query.join('&'));
+            final.push('?', this._query.map((qv) => qv.join('=')).join('&'));
         }
         if (this._fragment) {
             final.push('#', this._fragment);

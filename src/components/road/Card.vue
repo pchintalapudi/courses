@@ -6,7 +6,7 @@
 </template>
 <script lang="ts">
 import Vue from "vue";
-import { CourseJSON } from "../../fireroad";
+import { CourseJSON } from "@/fireroad";
 export default Vue.extend({
   props: { course_id: String },
   computed: {
