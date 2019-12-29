@@ -6,7 +6,7 @@
     <section>
       <span class="header">
         <span class="auth">TODO Auth Stuff</span>
-        <search-vue class="search"></search-vue>
+        <search-vue class="search" @load-course="inspect"></search-vue>
       </span>
       <nav class="roads">
         <span class="road-list">
@@ -41,19 +41,33 @@
         <i>Let's get started!</i>
       </article>
     </section>
+    <info-vue
+      v-if="inspecting"
+      class="info"
+      :id="inspecting"
+      :max="maximize_info"
+      @close-info="inspecting=''"
+      @toggle-max="toggle_max"
+    ></info-vue>
   </main>
 </template>
 <script lang="ts">
 import Vue from "vue";
 import YearVue from "./road/Year.vue";
 import SearchVue from "./road/Search.vue";
+import InfoVue from "./road/Info.vue";
 export default Vue.extend({
   created() {
     this.$store.dispatch("classes/init");
   },
-  components: { YearVue, SearchVue },
+  components: { YearVue, SearchVue, InfoVue },
   data() {
-    return { editing: -1, editingText: "" };
+    return {
+      editing: -1,
+      editingText: "Untitled",
+      inspecting: "",
+      maximize_info: false
+    };
   },
   watch: {
     editingText(next) {
@@ -84,8 +98,8 @@ export default Vue.extend({
   methods: {
     newRoad(input: any) {
       this.editing = this.$store.state.roads.course_roads.length;
-      this.editingText = "";
-      this.$store.commit("roads/new_road", "");
+      this.editingText = "Untitled";
+      this.$store.commit("roads/new_road", this.editingText);
       this.$nextTick(() => (input.target as any).focus());
     },
     view(idx: number) {
@@ -97,6 +111,17 @@ export default Vue.extend({
     edit(idx: number) {
       this.editing = idx;
       this.editingText = this.$store.state.roads.course_roads[idx][0];
+    },
+    inspect(course: string) {
+      this.$store.dispatch("classes/load", course);
+      this.inspecting = course;
+    },
+    close_info() {
+      this.inspecting = "";
+      this.maximize_info = false;
+    },
+    toggle_max() {
+      this.maximize_info = !this.maximize_info;
     }
   }
 });
@@ -184,6 +209,17 @@ input {
   width: 80%;
 }
 .search {
-    width: 500px;
+  width: 500px;
+}
+.info {
+  position: fixed;
+  width: 30vw;
+  height: 40vh;
+  right: 0;
+  bottom: 0;
+}
+.info[max] {
+  width: 75vw;
+  height: 100vh;
 }
 </style>

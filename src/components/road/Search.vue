@@ -1,8 +1,19 @@
 <template>
-  <div class="search-bar" @focusout="view_results=false" @focusin="view_results=true">
-    <input type="text" name="course-search" id="course-search" v-model="search_text" />
+  <div class="search-bar" @click="view_results=false">
+    <input
+      type="text"
+      name="course-search"
+      id="course-search"
+      v-model="search_text"
+      @click.stop="view_results=true"
+    />
     <section class="results" v-if="view_results">
-      <button v-for="result in search_results" :key="result.subject_id" class="search-result" @click="$emit('load-course', result.subject_id)">
+      <button
+        v-for="result in search_results"
+        :key="result.subject_id"
+        class="search-result"
+        @click="show(result)"
+      >
         <b>{{result.subject_id}}</b>
         <p>{{result.title}}</p>
       </button>
@@ -20,9 +31,15 @@ export default Vue.extend({
     search_results(): CourseJSON[] {
       return this.search_text
         ? this.$store.state.classes.id_search_trie.autocomplete(
-            this.search_text
+            this.search_text.toUpperCase()
           )
         : [];
+    }
+  },
+  methods: {
+    show(result: CourseJSON) {
+      this.$emit("load-course", result.subject_id);
+      this.view_results = false;
     }
   }
 });
@@ -33,7 +50,7 @@ export default Vue.extend({
   border-radius: 5px;
   padding: 5px;
   margin: 5px;
-  width:200px;
+  width: 200px;
 }
 .search-bar {
   position: relative;
@@ -52,7 +69,7 @@ export default Vue.extend({
   overflow: hidden;
   background-color: white;
   cursor: pointer;
-  border:none;
+  border: none;
   display: flex;
   width: 100%;
 }
@@ -62,7 +79,7 @@ export default Vue.extend({
 .search-result:active {
   background-color: #dddddd;
 }
-.search-result>* {
-    padding: 5px;
+.search-result > * {
+  padding: 5px;
 }
 </style>

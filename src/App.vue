@@ -22,6 +22,7 @@ body,
   width: 100vw;
 }
 #app {
-    display: flex;
+  display: flex;
+  font-family: "Titillium Web", sans-serif;
 }
 </style>
