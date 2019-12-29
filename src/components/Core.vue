@@ -55,8 +55,13 @@
       class="info"
       :id="inspecting"
       :max="maximize_info"
+      :idx="inspect_index"
+      :length="inspection_history.length"
       @close-info="inspecting=''"
       @toggle-max="toggle_max"
+      @push-course="push_course"
+      @next-course="next_course"
+      @prev-course="prev_course"
     ></info-vue>
   </main>
 </template>
@@ -144,6 +149,7 @@ export default Vue.extend({
     },
     inspect(course: string) {
       this.$store.dispatch("classes/load", course);
+      this.maximize_info = !!this.inspecting && this.maximize_info;
       this.inspecting = course;
       this.inspection_history.splice(0, this.inspection_history.length, course);
     },
@@ -163,6 +169,25 @@ export default Vue.extend({
         });
         this.close_info();
       }
+    },
+    push_course(course: string) {
+      this.inspection_history.splice(
+        this.inspect_index + 1,
+        this.inspection_history.length,
+        course
+      );
+      this.inspecting = course;
+      this.$store.dispatch("classes/load", course);
+    },
+    next_course() {
+      this.inspecting = this.inspection_history[
+        Math.min(this.inspect_index + 1, this.inspection_history.length - 1)
+      ];
+    },
+    prev_course() {
+      this.inspecting = this.inspection_history[
+        Math.max(0, this.inspect_index - 1)
+      ];
     }
   }
 });

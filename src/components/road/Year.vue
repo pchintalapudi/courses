@@ -21,10 +21,11 @@
           @click="$emit('place-course', i)"
         >
           <card-vue
-            v-for="course in quarter"
-            :key="`year ${idx} quarter ${i} course ${course}`"
+            v-for="(course, j) in quarter"
+            :key="`year ${idx} quarter ${i} course ${j}`"
             :course_id="course"
             @load-course="$emit('load-course', $event)"
+            @remove-course="remove(idx, i, j)"
           ></card-vue>
         </div>
       </section>
@@ -97,6 +98,9 @@ export default Vue.extend({
       return sum === undefined || sum === null || Number.isNaN(sum)
         ? "Hours: ---"
         : `Hours: ${Number(sum.toFixed(2))}`;
+    },
+    remove(year: number, quarter: number, idx: number) {
+        this.$store.commit("roads/remove_course", {year, quarter, idx});
     }
   }
 });

@@ -1,4 +1,3 @@
-import { FullCourseJSON, RequirementsJSON } from "@/fireroad";
 import { Module } from 'vuex';
 
 export enum Quarter { FALL, IAP, SPRING, SUMMER }

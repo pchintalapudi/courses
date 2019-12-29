@@ -1,11 +1,15 @@
 <template>
   <article class="info-card">
-    <span
-      class="head"
-      @dblclick="$emit('toggle-max')"
-      :style="`--bg-color:${computeColor(id)}`"
-    >
-      <h3>{{id}}</h3>
+    <span class="head" @dblclick="$emit('toggle-max')" :style="`--bg-color:${computeColor(id)}`">
+      <h3>
+        <button v-if="idx > 0" class="prev" @click="$emit('prev-course')">
+          <div></div>
+        </button>
+        {{id}}
+        <button v-if="idx < length-1" class="next" @click="$emit('next-course')">
+          <div></div>
+        </button>
+      </h3>
       <button @click="$emit('close-info')">&times;</button>
     </span>
     <div class="body">
@@ -37,6 +41,7 @@
             v-for="prereq in prerequisites"
             :key="prereq"
             :style="`--bg-color:${computeColor(prereq)}`"
+            @click="navigate(prereq)"
           >
             <h6>{{prereq}}</h6>
             <p>{{title(prereq)}}</p>
@@ -50,6 +55,7 @@
             v-for="coreq in corequisites"
             :key="coreq"
             :style="`--bg-color:${computeColor(coreq)}`"
+            @click="navigate(coreq)"
           >
             <h6>{{coreq}}</h6>
             <p>{{title(coreq)}}</p>
@@ -63,9 +69,9 @@
 import Vue from "vue";
 import { CourseJSON, is_full_course, FullCourseJSON } from "@/fireroad";
 import { Quarter } from "@/store/road";
-import { is_gir, requisite_parser } from "@/fireroad/demystify";
+import { is_gir, requisite_parser, de_gir } from "@/fireroad/demystify";
 export default Vue.extend({
-  props: { id: String },
+  props: { id: String, idx: Number, length: Number },
   computed: {
     course(): CourseJSON | undefined {
       return (
@@ -189,6 +195,14 @@ export default Vue.extend({
         this.range(num, 1, 24, 120, 280).toFixed(0)
       ).toString();
       return hue + "deg"; // `hsl(${hue}deg, 75%, 50%)`;
+    },
+    navigate(req: string) {
+      if (is_gir(req)) {
+        req = de_gir(req)[0];
+      }
+      if (req.indexOf("permission of instructor") === -1) {
+        this.$emit("push-course", req);
+      }
     }
   }
 });
@@ -218,7 +232,7 @@ h6 {
   align-items: center;
   padding: 5px;
 }
-.head > button {
+.head button {
   font-size: 1.5em;
   border: none;
   border-radius: 50%;
@@ -233,11 +247,14 @@ h6 {
   color: white;
   transition: background-color 150ms;
 }
-.head > button:hover {
+.head button:hover {
   background-color: #00000022;
 }
 .head > button:active {
   background-color: #ff000044;
+}
+.head>h3>button:active {
+    background-color: #00000044;
 }
 .info-card {
   display: flex;
@@ -282,10 +299,30 @@ h5 + * {
   background-color: hsl(var(--bg-color), 75%, 50%);
 }
 
-.prereqs>:hover, .coreqs>:hover {
-    background-color: hsl(var(--bg-color), 75%, 40%);
+.prereqs > :hover,
+.coreqs > :hover {
+  background-color: hsl(var(--bg-color), 75%, 40%);
 }
-.prereqs>:active, .coreqs>:active {
-    background-color: hsl(var(--bg-color), 75%, 30%);
+.prereqs > :active,
+.coreqs > :active {
+  background-color: hsl(var(--bg-color), 75%, 30%);
+}
+
+.prev>div, .next>div {
+    border-top:solid white 2px;
+    border-left:solid white 2px;
+
+    transform: rotate(var(--deg));
+    flex: 1;
+    --margin: 75%;
+    height: calc(100% - var(--margin));
+}
+.prev>div {
+    --deg:315deg;
+    margin: 0 calc(var(--margin) / 2);
+}
+.next>div {
+    --deg:135deg;
+    margin: 0 calc(var(--margin) / 2);
 }
 </style>
