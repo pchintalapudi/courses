@@ -28,10 +28,13 @@ export default Vue.extend({
     return { search_text: "", view_results: false };
   },
   computed: {
+    trimmed(): string {
+      return this.search_text.trim();
+    },
     search_results(): CourseJSON[] {
-      return this.search_text
+      return this.trimmed
         ? this.$store.state.classes.id_search_trie.autocomplete(
-            this.search_text.toUpperCase()
+            this.trimmed.toUpperCase()
           )
         : [];
     }
