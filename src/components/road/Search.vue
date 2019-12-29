@@ -63,6 +63,7 @@ export default Vue.extend({
   overflow: auto;
   max-height: 50vh;
   border: solid #dddddd 2px;
+  z-index: 1;
 }
 .search-result {
   padding: 5px;

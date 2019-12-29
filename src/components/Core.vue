@@ -35,7 +35,16 @@
         <button class="new-road" @click="newRoad">+</button>
       </nav>
       <article v-if="viewing!==-1" class="road-display">
-        <year-vue v-for="(year, idx) in years" :key="`year ${idx}`" :year="year" :idx="idx"></year-vue>
+        <year-vue
+          v-for="(year, idx) in years"
+          :key="`year ${idx}`"
+          :year="year"
+          :idx="idx"
+          :placing="inspecting"
+          :allowed="allowed"
+          @load-course="inspect"
+          @place-course="place(idx, $event)"
+        ></year-vue>
       </article>
       <article v-else class="no-roads">
         <i>Let's get started!</i>
@@ -56,6 +65,8 @@ import Vue from "vue";
 import YearVue from "./road/Year.vue";
 import SearchVue from "./road/Search.vue";
 import InfoVue from "./road/Info.vue";
+import { CourseJSON } from "../fireroad";
+import { Quarter } from "../store/road";
 export default Vue.extend({
   created() {
     this.$store.dispatch("classes/init");
@@ -93,6 +104,21 @@ export default Vue.extend({
     },
     years(): string[][] {
       return this.$store.state.roads.course_roads[this.viewing][1].years;
+    },
+    inspect_course(): CourseJSON | undefined {
+      return this.$store.state.classes.manifest_updated
+        ? this.$store.state.classes.manifest.get(this.inspecting)!
+        : undefined;
+    },
+    allowed(): [boolean, boolean, boolean, boolean] | undefined {
+      return this.inspect_course
+        ? [
+            this.inspect_course.offered_fall,
+            this.inspect_course.offered_IAP,
+            this.inspect_course.offered_spring,
+            this.inspect_course.offered_summer
+          ]
+        : undefined;
     }
   },
   methods: {
@@ -122,6 +148,16 @@ export default Vue.extend({
     },
     toggle_max() {
       this.maximize_info = !this.maximize_info;
+    },
+    place(idx: number, i: number) {
+      if (this.inspecting) {
+        this.$store.commit("roads/add_course", {
+          year: idx,
+          quarter: i,
+          course: this.inspecting
+        });
+        this.close_info();
+      }
     }
   }
 });
@@ -188,6 +224,7 @@ main {
   flex: 1;
   display: flex;
   flex-flow: column nowrap;
+  overflow: auto;
 }
 .no-roads {
   justify-content: center;

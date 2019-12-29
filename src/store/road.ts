@@ -32,11 +32,11 @@ export const roads: Module<typeof road_state, any> = {
             course_roads[viewing][1].years.splice(year, 1);
         },
         add_course({ course_roads, viewing },
-            { year, quarter, course }: { year: number, quarter: Quarter, course: string }) {
+            { year, quarter, course }: { year: number, quarter: number, course: string }) {
             course_roads[viewing][1].years[year][quarter].push(course);
         },
         remove_course({ course_roads, viewing },
-            { year, quarter, idx }: { year: number, quarter: Quarter, idx: number }) {
+            { year, quarter, idx }: { year: number, quarter: number, idx: number }) {
             course_roads[viewing][1].years[year][quarter].splice(idx, 1);
         },
         view(state, road: number) {
