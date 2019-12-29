@@ -9,7 +9,7 @@
         <span class="quarter-header" @click="collapsed.splice(i, 1, !collapsed[i])">
           <i>{{quarter_label(i)}}</i>
           <p>{{unit_count(i)}}</p>
-          <p>{{hour_count(i)}}</p>
+          <!-- <p>{{hour_count(i)}}</p> -->
           <div class="collapsible" :collapsed="collapsed[i]"></div>
         </span>
         <div

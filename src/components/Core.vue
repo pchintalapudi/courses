@@ -77,6 +77,7 @@ export default Vue.extend({
       editing: -1,
       editingText: "Untitled",
       inspecting: "",
+      inspection_history: [] as string[],
       maximize_info: false
     };
   },
@@ -110,6 +111,9 @@ export default Vue.extend({
         ? this.$store.state.classes.manifest.get(this.inspecting)!
         : undefined;
     },
+    inspect_index(): number {
+      return this.inspection_history.indexOf(this.inspecting);
+    },
     allowed(): [boolean, boolean, boolean, boolean] | undefined {
       return this.inspect_course
         ? [
@@ -141,6 +145,7 @@ export default Vue.extend({
     inspect(course: string) {
       this.$store.dispatch("classes/load", course);
       this.inspecting = course;
+      this.inspection_history.splice(0, this.inspection_history.length, course);
     },
     close_info() {
       this.inspecting = "";

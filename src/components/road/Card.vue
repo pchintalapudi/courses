@@ -24,16 +24,7 @@ export default Vue.extend({
       return this.course!.title;
     },
     display_name(): string {
-      if (this.name.length < 25) {
-        return this.name;
-      }
-      const fragments = this.name.split(" ");
-      let length = 0;
-      let i = 0;
-      for (; i < fragments.length && length < 25; i++) {
-        length += fragments[i].length;
-      }
-      return fragments.slice(0, Math.max(i, 2)).join(" ") + " ...";
+      return this.truncate_name(this.name);
     },
     color(): string {
       // Looks sketchy but works so -\ :| /-
@@ -42,6 +33,18 @@ export default Vue.extend({
     }
   },
   methods: {
+    truncate_name(name: string): string {
+      if (name.length < 25) {
+        return name;
+      }
+      const fragments = name.split(" ");
+      let length = 0;
+      let i = 0;
+      for (; i < fragments.length && length < 25; i++) {
+        length += fragments[i].length;
+      }
+      return fragments.slice(0, Math.max(i, 2)).join(" ") + " ...";
+    },
     range(
       num: number,
       start: number,
@@ -57,7 +60,9 @@ export default Vue.extend({
       if (Number.isNaN(num)) {
         return "hsl(30deg, 75%, 50%)";
       }
-      const hue = Number(this.range(num, 1, 24, 120, 280).toFixed(0)).toString();
+      const hue = Number(
+        this.range(num, 1, 24, 120, 280).toFixed(0)
+      ).toString();
       return `hsl(${hue}deg, 75%, 50%)`;
     }
   }

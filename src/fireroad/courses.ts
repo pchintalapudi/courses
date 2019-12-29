@@ -39,10 +39,10 @@ export interface FullCourseJSON extends CourseJSON {
     has_final: boolean;
 
     description?: string;
-    prerequisites?: string[];
-    corequisites?: string[];
+    prerequisites?: string;
+    corequisites?: string;
     url?: string;
-    related_subjects?: string[];
+    related_subjects?: string;
     rating?: number;
     enrollment_number?: number;
     in_class_hours?: number;
