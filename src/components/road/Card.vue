@@ -73,5 +73,6 @@ export default Vue.extend({
   padding: 10px;
   border-radius: 10px;
   box-shadow: 5px 5px 5px #00000044;
+  margin: 12.5px 0;
 }
 </style>

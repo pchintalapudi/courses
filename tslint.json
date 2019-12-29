@@ -21,6 +21,7 @@
         "quotemark": false,
         "variable-name": false,
         "align": false,
-        "trailing-comma": false
+        "trailing-comma": false,
+        "arrow-parens": false
     }
 }

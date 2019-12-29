@@ -8,6 +8,8 @@
       <section v-for="(quarter, i) in year" :key="`year ${idx} quarter ${i}`" class="quarter">
         <span class="quarter-header" @click="collapsed.splice(i, 1, !collapsed[i])">
           <i>{{quarter_label(i)}}</i>
+          <p>{{unit_count(i)}}</p>
+          <p>{{hour_count(i)}}</p>
           <div class="collapsible" :collapsed="collapsed[i]"></div>
         </span>
         <div
@@ -69,6 +71,32 @@ export default Vue.extend({
         this.allowed &&
         (!this.allowed[i] || this.year[i].indexOf(this.placing) !== -1)
       );
+    },
+    unit_count(quarter: number): string {
+      if (!this.$store.state.classes.manifest_updated) {
+        return "Loading Total Unit Count...";
+      }
+      const sum = this.year[quarter]
+        .map(id => this.$store.state.classes.manifest.get(id)!.total_units)
+        .reduce((run, next) => run + next, 0);
+      return `Units: ${sum}`;
+    },
+    hour_count(quarter: number): string {
+      if (!this.$store.state.classes.manifest_updated) {
+        return "Loading Total Hour Count...";
+      }
+      const sum = this.year[quarter]
+        .map(id => this.$store.state.classes.manifest.get(id))
+        .map(cls =>
+          cls.in_class_hours !== undefined &&
+          cls.out_of_class_hours !== undefined
+            ? cls.in_class_hours + cls.out_of_class_hours
+            : Number.NaN
+        )
+        .reduce((old, next) => old + next, 0);
+      return sum === undefined || sum === null || Number.isNaN(sum)
+        ? "Hours: ---"
+        : `Hours: ${Number(sum.toFixed(2))}`;
     }
   }
 });
@@ -82,15 +110,12 @@ export default Vue.extend({
 .year-header,
 .quarter-header {
   background-color: #dddddd;
-  height: 1.5em;
+  height: 2.5em;
   display: flex;
   align-items: center;
   cursor: pointer;
   position: relative;
-}
-.year-header > b,
-.quarter-header > i {
-  flex: 1;
+  padding: 0.5em;
 }
 .collapsible {
   border-right: solid black 2px;
@@ -143,5 +168,8 @@ export default Vue.extend({
 }
 .quarter-classes[forbidden]:hover {
   background-color: #ff000044;
+}
+.quarter-header > p {
+  padding: 0 10px;
 }
 </style>
