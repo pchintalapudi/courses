@@ -7,6 +7,7 @@
       v-model="search_text"
       @click.stop="view_results=true"
       @keydown.enter="enter"
+      :disabled="disable"
     />
     <section class="results" v-if="view_results">
       <button
@@ -24,8 +25,9 @@
 <script lang="ts">
 import Vue from "vue";
 import { RequirementTitles } from "@/fireroad";
-import { Requirements } from '@/store/requirements';
+import { Requirements } from "@/store/requirements";
 export default Vue.extend({
+  props: { disable: Boolean },
   data() {
     return {
       search_text: "",

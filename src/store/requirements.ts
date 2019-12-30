@@ -1,4 +1,4 @@
-import { RequirementTitles, server_requirements, Trie } from '@/fireroad';
+import { RequirementTitles, ProgressJSON, server_requirements, Trie } from '@/fireroad';
 import { Module } from 'vuex';
 
 export class Requirements {
@@ -10,7 +10,8 @@ export class Requirements {
 
 const requirementState = {
     manifest: new Map<string, Requirements>(),
-    title_search_trie: new Trie<Set<Requirements>>()
+    title_search_trie: new Trie<Set<Requirements>>(),
+    manifest_tracker: 0
 };
 
 const ignore_set = new Set(["by", "of", "in", "as", "the", "and"]);
@@ -20,6 +21,7 @@ export const requirements: Module<typeof requirementState, any> = {
     mutations: {
         _set_titles(state, titles: RequirementTitles[]) {
             const reqs = titles.map(t => new Requirements(t));
+            state.manifest_tracker = 1;
             reqs.forEach(r => state.manifest.set(r.reqs.list_id, r));
             for (const req of reqs) {
                 for (const word of req.reqs.title.replace(/\(|\)|,/g, "")
@@ -29,6 +31,17 @@ export const requirements: Module<typeof requirementState, any> = {
                 state.title_search_trie.get_or_set(req.reqs.short_title,
                     new Set<Requirements>()).add(req);
             }
+        },
+        _update(state, progresses: ProgressJSON[]) {
+            for (const progress of progresses) {
+                const req = state.manifest.get(progress.list_id)!;
+                req.reqs = progress;
+                req.loading = false;
+            }
+            state.manifest_tracker++;
+        },
+        _load({ manifest }, id: string) {
+            manifest.get(id)!.loading = true;
         }
     },
     actions: {
@@ -36,6 +49,23 @@ export const requirements: Module<typeof requirementState, any> = {
             const titles = await server_requirements.all_titles();
             (window as any).titles = titles;
             commit("_set_titles", titles);
+        },
+        async progress({ commit, dispatch }, { reqs, courses }: { reqs: string[], courses: string[] }) {
+            // commit("_load", reqs);
+            const progress = Promise.all(reqs.map((req) => {
+                return server_requirements.progress(req, courses).then((p) => {
+                    p.list_id = req;
+                    return p;
+                });
+            }));
+            dispatch("_delay_progress_input", await progress);
+        },
+        async _delay_progress_input({ state, commit, dispatch }, progresses: ProgressJSON[]) {
+            if (state.manifest_tracker) {
+                commit("_update", progresses);
+            } else {
+                dispatch("_delay_progress_input", progresses);
+            }
         }
     },
     namespaced: true

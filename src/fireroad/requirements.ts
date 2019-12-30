@@ -9,17 +9,22 @@ export interface RequirementTitles {
 
 export interface Requirement {
     req: string;
-    title: string;
+    title?: string;
 }
 
 export interface RequirementGroup {
     connection_type: 'all' | 'any';
     threshold_desc: string;
     reqs: Array<Requirement | RequirementGroup>;
+    title: string;
+}
+
+export function is_requirement(req: Requirement | RequirementGroup): req is Requirement {
+    return (req as Requirement).req !== undefined;
 }
 
 export interface RequirementsJSON extends RequirementTitles {
-    desc: string;
+    desc?: string;
     reqs: Array<Requirement | RequirementGroup>;
 }
 
@@ -69,14 +74,14 @@ export class RequirementsRequester {
             URLBuilder.path('requirements').path('get_json').path(id).build())).json());
     }
 
-    public async progress(id: string, road: any): Promise<ProgressJSON> {
+    public async progress(id: string, courses: string[]): Promise<ProgressJSON> {
         return snake_on_a_kebab(await (await window.fetch(
-            URLBuilder.path('requirements').path('progress').path(id).build(), { method: 'POST', body: road })));
+            URLBuilder.path('requirements').path('progress').path(id).path(courses.join(",")).build())).json());
     }
 }
 
 export function has_requirements(requirements: RequirementTitles): requirements is RequirementsJSON {
-    return (requirements as RequirementsJSON).desc !== undefined;
+    return (requirements as RequirementsJSON).reqs !== undefined;
 }
 
 export function has_progress(requirements: RequirementTitles): requirements is ProgressJSON {

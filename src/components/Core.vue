@@ -1,7 +1,17 @@
 <template>
   <main>
     <aside class="requirements">
-      <requirement-search-vue></requirement-search-vue>
+      <requirement-search-vue :disable="viewing===-1" @load-requirement="add_requirement"></requirement-search-vue>
+      <section class="reqs" v-if="viewing!==-1">
+        <requirement-tree-vue
+          v-for="req in requirements"
+          :key="`Requirement ${req}`"
+          :requirements="req"
+        ></requirement-tree-vue>
+      </section>
+      <section v-else>
+        <i>Add some requirements!</i>
+      </section>
     </aside>
     <section>
       <span class="header">
@@ -71,14 +81,21 @@ import YearVue from "./road/Year.vue";
 import SearchVue from "./road/Search.vue";
 import InfoVue from "./road/Info.vue";
 import RequirementSearchVue from "./requirements/RequirementSearch.vue";
-import { CourseJSON } from "../fireroad";
+import RequirementTreeVue from "./requirements/RequirementTree.vue";
+import { CourseJSON, RequirementTitles } from "../fireroad";
 import { Quarter } from "../store/road";
 export default Vue.extend({
   created() {
     this.$store.dispatch("classes/init");
     this.$store.dispatch("requirements/init");
   },
-  components: { YearVue, SearchVue, InfoVue, RequirementSearchVue },
+  components: {
+    YearVue,
+    SearchVue,
+    InfoVue,
+    RequirementSearchVue,
+    RequirementTreeVue
+  },
   data() {
     return {
       editing: -1,
@@ -130,6 +147,9 @@ export default Vue.extend({
             this.inspect_course.offered_summer
           ]
         : undefined;
+    },
+    requirements(): string[] {
+      return this.$store.state.roads.course_roads[this.viewing][1].requirements;
     }
   },
   methods: {
@@ -170,6 +190,7 @@ export default Vue.extend({
           course: this.inspecting
         });
         this.close_info();
+        this.update_progresses();
       }
     },
     push_course(course: string) {
@@ -190,6 +211,23 @@ export default Vue.extend({
       this.inspecting = this.inspection_history[
         Math.max(0, this.inspect_index - 1)
       ];
+    },
+    add_requirement(req: string) {
+      this.$store.dispatch("requirements/progress", {
+        reqs: [req],
+        courses: this.years.flatMap(s => s)
+      });
+      this.$store.commit("roads/add_requirement", req);
+    },
+    update_progresses() {
+      const courses = this.years.flatMap(s => s);
+      this.$store.dispatch("requirements/progress", {
+        reqs: this.requirements,
+        courses
+      });
+    },
+    tracker(req: string): number {
+      return this.$store.state.requirements.manifest.get(req)!.tracker;
     }
   }
 });
@@ -290,5 +328,8 @@ input {
 .info[max] {
   width: 75vw;
   height: 100vh;
+}
+.reqs {
+  overflow: auto;
 }
 </style>
