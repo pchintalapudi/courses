@@ -9,7 +9,7 @@
         <span class="quarter-header" @click="collapsed.splice(i, 1, !collapsed[i])">
           <i>{{quarter_label(i)}}</i>
           <p>{{unit_count(i)}}</p>
-          <!-- <p>{{hour_count(i)}}</p> -->
+          <p>{{hour_count(i)}}</p>
           <div class="collapsible" :collapsed="collapsed[i]"></div>
         </span>
         <div
@@ -86,18 +86,17 @@ export default Vue.extend({
       if (!this.$store.state.classes.manifest_updated) {
         return "Loading Total Hour Count...";
       }
-      const sum = this.year[quarter]
+      const hours = this.year[quarter]
         .map(id => this.$store.state.classes.manifest.get(id))
         .map(cls =>
           cls.in_class_hours !== undefined &&
           cls.out_of_class_hours !== undefined
             ? cls.in_class_hours + cls.out_of_class_hours
             : Number.NaN
-        )
-        .reduce((old, next) => old + next, 0);
-      return sum === undefined || sum === null || Number.isNaN(sum)
-        ? "Hours: ---"
-        : `Hours: ${Number(sum.toFixed(2))}`;
+        );
+        const nan = hours.reduce((old, next) => old || Number.isNaN(next), false);
+        const sum = hours.reduce((old, next) => old + next || 0, 0);
+      return `Hours: ${nan ? '≥' : ''}${Number(sum.toFixed(2))}`;
     },
     remove(year: number, quarter: number, idx: number) {
         this.$store.commit("roads/remove_course", {year, quarter, idx});

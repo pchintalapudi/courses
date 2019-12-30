@@ -6,6 +6,7 @@
       id="course-search"
       v-model="search_text"
       @click.stop="view_results=true"
+      @keydown.enter="enter"
     />
     <section class="results" v-if="view_results">
       <button
@@ -43,6 +44,11 @@ export default Vue.extend({
     show(result: CourseJSON) {
       this.$emit("load-course", result.subject_id);
       this.view_results = false;
+    },
+    enter() {
+        if (this.search_results.length === 1) {
+            this.show(this.search_results[0]);
+        }
     }
   }
 });
