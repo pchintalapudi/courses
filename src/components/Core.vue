@@ -1,7 +1,7 @@
 <template>
   <main>
     <aside class="requirements">
-      <!--TODO Requirements-->
+      <requirement-search-vue></requirement-search-vue>
     </aside>
     <section>
       <span class="header">
@@ -70,13 +70,15 @@ import Vue from "vue";
 import YearVue from "./road/Year.vue";
 import SearchVue from "./road/Search.vue";
 import InfoVue from "./road/Info.vue";
+import RequirementSearchVue from "./requirements/RequirementSearch.vue";
 import { CourseJSON } from "../fireroad";
 import { Quarter } from "../store/road";
 export default Vue.extend({
   created() {
     this.$store.dispatch("classes/init");
+    this.$store.dispatch("requirements/init");
   },
-  components: { YearVue, SearchVue, InfoVue },
+  components: { YearVue, SearchVue, InfoVue, RequirementSearchVue },
   data() {
     return {
       editing: -1,
@@ -139,7 +141,7 @@ export default Vue.extend({
     },
     view(idx: number) {
       if (idx !== this.viewing) {
-        this.$store.state.roads.viewing = idx;
+        this.$store.commit("roads/view", idx);
         this.editing = -1;
       }
     },

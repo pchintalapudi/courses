@@ -26,6 +26,35 @@ export class Trie<V> {
         return trie ? trie.yield() : [];
     }
 
+    public get_or_set(id: string, val: V) {
+        let idx = 0;
+        let trie: Trie<V> = this;
+        while (idx < id.length) {
+            let trial = trie.children.get(id[idx]);
+            if (trial === undefined) {
+                trie.children.set(id[idx], trial = new Trie());
+            }
+            idx++;
+            trie = trial;
+        }
+        if (trie.value === undefined) {
+            trie.value = val;
+            this.count++;
+        } else {
+            val = trie.value;
+        }
+        return val;
+    }
+
+    public get(id: string) {
+        let idx = 0;
+        let trie: Trie<V> | undefined = this;
+        while (trie && idx < id.length) {
+            trie = trie.children.get(id[idx++]);
+        }
+        return trie && trie.value;
+    }
+
     private _yield(out: V[]) {
         if (this.value) { out.push(this.value); }
         this.children.forEach((t) => t._yield(out));

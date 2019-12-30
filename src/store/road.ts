@@ -43,6 +43,12 @@ export const roads: Module<typeof road_state, any> = {
         },
         update_name({ course_roads }, { road, name }: { road: number, name: string }) {
             course_roads[road].splice(0, 1, name);
+        },
+        add_requirement({ course_roads, viewing }, requirement: string) {
+            course_roads[viewing][1].requirements.push(requirement);
+        },
+        remove_requirement({ course_roads, viewing }, idx: number) {
+            course_roads[viewing][1].requirements.splice(idx, 1);
         }
     },
     namespaced: true,

@@ -7,20 +7,20 @@ export interface RequirementTitles {
     list_id: string;
 }
 
-export interface RequirementJSON {
+export interface Requirement {
     req: string;
     title: string;
 }
 
-export interface RequirementHeaderJSON {
+export interface RequirementGroup {
     connection_type: 'all' | 'any';
     threshold_desc: string;
-    reqs: Array<RequirementJSON | RequirementHeaderJSON>;
+    reqs: Array<Requirement | RequirementGroup>;
 }
 
 export interface RequirementsJSON extends RequirementTitles {
     desc: string;
-    reqs: Array<RequirementJSON | RequirementHeaderJSON>;
+    reqs: Array<Requirement | RequirementGroup>;
 }
 
 export interface ProgressJSON extends RequirementsJSON {
@@ -73,4 +73,12 @@ export class RequirementsRequester {
         return snake_on_a_kebab(await (await window.fetch(
             URLBuilder.path('requirements').path('progress').path(id).build(), { method: 'POST', body: road })));
     }
+}
+
+export function has_requirements(requirements: RequirementTitles): requirements is RequirementsJSON {
+    return (requirements as RequirementsJSON).desc !== undefined;
+}
+
+export function has_progress(requirements: RequirementTitles): requirements is ProgressJSON {
+    return (requirements as ProgressJSON).progress !== undefined;
 }
