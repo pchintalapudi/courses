@@ -11,6 +11,7 @@ import {
     is_requirement
 } from './requirements';
 import { Trie } from './search';
+import { RoadJSON, Class } from './requirements';
 
 const server_courses = new CourseRequester();
 const server_requirements = new RequirementsRequester();
@@ -24,7 +25,9 @@ export {
     ProgressJSON,
     Requirement,
     RequirementGroup,
-    is_requirement
+    is_requirement,
+    RoadJSON,
+    Class
 };
 export { is_full_course };
 export { Trie };

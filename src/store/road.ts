@@ -9,6 +9,7 @@ function make_year(): string[][] {
 // tslint:disable-next-line: max-classes-per-file
 export class Road {
     public years = [make_year(), make_year(), make_year(), make_year()];
+    public prior_credit: string[] = [];
     public requirements: string[] = [];
 }
 
@@ -32,11 +33,19 @@ export const roads: Module<typeof road_state, any> = {
         },
         add_course({ course_roads, viewing },
             { year, quarter, course }: { year: number, quarter: number, course: string }) {
-            course_roads[viewing][1].years[year][quarter].push(course);
+            if (year !== -1) {
+                course_roads[viewing][1].years[year][quarter].push(course);
+            } else {
+                course_roads[viewing][1].prior_credit.push(course);
+            }
         },
         remove_course({ course_roads, viewing },
             { year, quarter, idx }: { year: number, quarter: number, idx: number }) {
-            course_roads[viewing][1].years[year][quarter].splice(idx, 1);
+            if (year !== -1) {
+                course_roads[viewing][1].years[year][quarter].splice(idx, 1);
+            } else {
+                course_roads[viewing][1].prior_credit.splice(idx, 1);
+            }
         },
         view(state, road: number) {
             state.viewing = road;

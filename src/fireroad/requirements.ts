@@ -19,6 +19,21 @@ export interface RequirementGroup {
     title: string;
 }
 
+export interface Class {
+    id: string;
+    index: number;
+    overrideWarnings: boolean;
+    semester: number;
+    title: string;
+    units: number;
+}
+
+export interface RoadJSON {
+    coursesOfStudy: string[];
+    progressOverrides?: any;
+    selectedSubjects: Class[];
+}
+
 export function is_requirement(req: Requirement | RequirementGroup): req is Requirement {
     return (req as Requirement).req !== undefined;
 }
@@ -74,9 +89,10 @@ export class RequirementsRequester {
             URLBuilder.path('requirements').path('get_json').path(id).build())).json());
     }
 
-    public async progress(id: string, courses: string[]): Promise<ProgressJSON> {
+    public async progress(id: string, road: RoadJSON): Promise<ProgressJSON> {
         return snake_on_a_kebab(await (await window.fetch(
-            URLBuilder.path('requirements').path('progress').path(id).path(courses.join(",")).build())).json());
+            URLBuilder.path('requirements').path('progress').path(id).build(),
+            { method: "POST", body: JSON.stringify(road) })).json());
     }
 }
 

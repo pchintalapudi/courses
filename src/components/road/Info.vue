@@ -253,8 +253,8 @@ h6 {
 .head > button:active {
   background-color: #ff000044;
 }
-.head>h3>button:active {
-    background-color: #00000044;
+.head > h3 > button:active {
+  background-color: #00000044;
 }
 .info-card {
   display: flex;
@@ -308,21 +308,22 @@ h5 + * {
   background-color: hsl(var(--bg-color), 75%, 30%);
 }
 
-.prev>div, .next>div {
-    border-top:solid white 2px;
-    border-left:solid white 2px;
+.prev > div,
+.next > div {
+  border-top: solid white 2px;
+  border-left: solid white 2px;
 
-    transform: rotate(var(--deg));
-    flex: 1;
-    --margin: 75%;
-    height: calc(100% - var(--margin));
+  transform: rotate(var(--deg));
+  flex: 1;
+  --margin: 75%;
+  height: calc(100% - var(--margin));
 }
-.prev>div {
-    --deg:315deg;
-    margin: 0 calc(var(--margin) / 2);
+.prev > div {
+  --deg: 315deg;
+  margin: 0 calc(var(--margin) / 2);
 }
-.next>div {
-    --deg:135deg;
-    margin: 0 calc(var(--margin) / 2);
+.next > div {
+  --deg: 135deg;
+  margin: 0 calc(var(--margin) / 2);
 }
 </style>

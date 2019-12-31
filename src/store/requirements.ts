@@ -1,5 +1,6 @@
 import { RequirementTitles, ProgressJSON, server_requirements, Trie } from '@/fireroad';
 import { Module } from 'vuex';
+import { RoadJSON } from '../fireroad/requirements';
 
 export class Requirements {
 
@@ -50,7 +51,7 @@ export const requirements: Module<typeof requirementState, any> = {
             (window as any).titles = titles;
             commit("_set_titles", titles);
         },
-        async progress({ commit, dispatch }, { reqs, courses }: { reqs: string[], courses: string[] }) {
+        async progress({ commit, dispatch }, { reqs, courses }: { reqs: string[], courses: RoadJSON }) {
             // commit("_load", reqs);
             const progress = Promise.all(reqs.map((req) => {
                 return server_requirements.progress(req, courses).then((p) => {

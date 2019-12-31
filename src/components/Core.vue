@@ -45,6 +45,12 @@
         <button class="new-road" @click="newRoad">+</button>
       </nav>
       <article v-if="viewing!==-1" class="road-display">
+        <prior-credit-vue
+          :classes="prior_credit"
+          :placing="inspecting"
+          @load-course="inspect"
+          @place-course="place(-1, 0)"
+        ></prior-credit-vue>
         <year-vue
           v-for="(year, idx) in years"
           :key="`year ${idx}`"
@@ -77,19 +83,21 @@
 </template>
 <script lang="ts">
 import Vue from "vue";
+import PriorCreditVue from "./road/PriorCredit.vue";
 import YearVue from "./road/Year.vue";
 import SearchVue from "./road/Search.vue";
 import InfoVue from "./road/Info.vue";
 import RequirementSearchVue from "./requirements/RequirementSearch.vue";
 import RequirementTreeVue from "./requirements/RequirementTree.vue";
-import { CourseJSON, RequirementTitles } from "../fireroad";
-import { Quarter } from "../store/road";
+import { CourseJSON, RequirementTitles, RoadJSON, Class } from "@/fireroad";
+import { Quarter } from "@/store/road";
 export default Vue.extend({
   created() {
     this.$store.dispatch("classes/init");
     this.$store.dispatch("requirements/init");
   },
   components: {
+    PriorCreditVue,
     YearVue,
     SearchVue,
     InfoVue,
@@ -127,8 +135,11 @@ export default Vue.extend({
         (tup: [string, any]) => tup[0]
       );
     },
-    years(): string[][] {
+    years(): string[][][] {
       return this.$store.state.roads.course_roads[this.viewing][1].years;
+    },
+    prior_credit(): string[] {
+      return this.$store.state.roads.course_roads[this.viewing][1].prior_credit;
     },
     inspect_course(): CourseJSON | undefined {
       return this.$store.state.classes.manifest_updated
@@ -150,6 +161,22 @@ export default Vue.extend({
     },
     requirements(): string[] {
       return this.$store.state.roads.course_roads[this.viewing][1].requirements;
+    },
+    courses(): string[] {
+      return this.years
+        .flatMap(s => s.flatMap(a => a))
+        .concat(this.prior_credit);
+    },
+    road_json(): RoadJSON {
+      const priors = this.prior_credit.map((s, i) =>
+        this.make_class(s, 0, -1, i)
+      );
+      const classes = priors.concat(
+        this.years.flatMap((arr, i) =>
+          arr.flatMap((s, j) => s.map((id, k) => this.make_class(id, i, j, k)))
+        )
+      );
+      return { coursesOfStudy: this.requirements, selectedSubjects: classes };
     }
   },
   methods: {
@@ -215,19 +242,29 @@ export default Vue.extend({
     add_requirement(req: string) {
       this.$store.dispatch("requirements/progress", {
         reqs: [req],
-        courses: this.years.flatMap(s => s)
+        courses: this.road_json
       });
       this.$store.commit("roads/add_requirement", req);
     },
     update_progresses() {
-      const courses = this.years.flatMap(s => s);
       this.$store.dispatch("requirements/progress", {
         reqs: this.requirements,
-        courses
+        courses: this.road_json
       });
     },
     tracker(req: string): number {
       return this.$store.state.requirements.manifest.get(req)!.tracker;
+    },
+    make_class(id: string, year: number, quarter: number, idx: number): Class {
+      const course: CourseJSON = this.$store.state.classes.manifest.get(id)!;
+      return {
+        id,
+        index: year * 4 + 1 + quarter + idx,
+        overrideWarnings: false,
+        semester: year * 4 + 1 + quarter,
+        title: course.title,
+        units: course.total_units
+      };
     }
   }
 });

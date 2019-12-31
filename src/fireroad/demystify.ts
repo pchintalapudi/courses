@@ -26,7 +26,7 @@ export function requisite_parser(requisites: string) {
             building.push(char);
         } else {
             const word = building.join("").trim();
-            if (word && word !== "permission" && word !== "of" && word !== "instructor") {
+            if (word && word !== "permission" && word !== "of" && word !== "instructor" && word.toLowerCase() !== "coreq:") {
                 built.push(word);
             }
             building.length = 0;
@@ -36,6 +36,7 @@ export function requisite_parser(requisites: string) {
     if (w && w !== "permission" && w !== "of" && w !== "instructor") {
         built.push(w);
     }
+    console.log(built);
     return built;
 }
 
