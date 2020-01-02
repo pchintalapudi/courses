@@ -80,13 +80,14 @@ export default Vue.extend({
   right: 0;
   overflow: auto;
   max-height: 50vh;
+  background-color: #202020;
   border: solid #ffffff20 2px;
   z-index: 1;
 }
 .search-result {
   padding: 5px;
   overflow: hidden;
-  background-color: #ffffff18;
+  background-color: transparent;
   color: hsl(0, 0%, 80%);
   cursor: pointer;
   border: none;

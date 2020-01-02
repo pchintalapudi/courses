@@ -1,10 +1,24 @@
 <template>
   <article>
     <section v-if="is_req">
-      <h3 class="req"><div class="completion" :completed="req.fulfilled"></div>{{req.req}}</h3>
+      <h3 class="req">
+        <div class="completion" :completed="req.fulfilled"></div>
+        {{req.req}}
+      </h3>
     </section>
     <section class="children" v-else>
-      <h3 @click="collapsed=!collapsed" class="req-header"><div :collapsed="collapsed"></div>{{req.title}} <i>{{req.threshold_desc}} from</i></h3>
+      <h3
+        @click="collapsed=!collapsed"
+        class="req-header"
+        :fulfilled="!!req.fulfilled"
+        :progress="req.percent_fulfilled !== undefined && req.sat_courses.length > 0"
+        :style="req.percent_fulfilled !== undefined && `--progress:${req.percent_fulfilled / 100}`"
+      >
+        <div :collapsed="collapsed"></div>
+        {{req.title}}
+        <i>{{req.threshold_desc}} from</i>
+      <span class="progress"></span>
+      </h3>
       <template v-if="!collapsed">
         <requirement-vue
           v-for="(child, i) in children"
@@ -51,49 +65,79 @@ export default Vue.extend({
 </script>
 <style scoped>
 .req-header {
-    cursor: pointer;
-    margin-left: -2em;
+  cursor: pointer;
+  margin-left: -2em;
+  display: flex;
+  flex-flow: row wrap;
 }
-.req, .req-header {
-    font-size: 1rem;
-    position: relative;
-    min-width: 200px;
+.req,
+.req-header {
+  font-size: 1rem;
+  position: relative;
+  min-width: 200px;
 }
 .children {
-    padding-left: 2em;
+  padding-left: 2em;
 }
-.req>.completion {
-    position:absolute;
-    left:-1em;
-    --height: 1px;
-    top: calc(50% - var(--height));
-    bottom: calc(50% - var(--height));
-    width: 0.75em;
-    border: solid hsl(0, 0%, 80%) var(--height);
-    transition: border-color 300ms, border-width 300ms, border-style 300ms, top 300ms, bottom 300ms, transform 300ms;
+.req > .completion {
+  position: absolute;
+  left: -1em;
+  --height: 1px;
+  top: calc(50% - var(--height));
+  bottom: calc(50% - var(--height));
+  width: 0.75em;
+  border: solid hsl(0, 0%, 80%) var(--height);
+  transition: border-color 300ms, border-width 300ms, border-style 300ms,
+    top 300ms, bottom 300ms, transform 300ms;
 }
-.req>[completed] {
-    border-style: none;
-    border-color: hsl(120deg, 75%, 50%);
-    border-right-color: transparent;
-    border-top-color: transparent;
-    border-bottom-style: solid;
-    border-left-style: solid;
-    --height: 2px;
-    transform: translateY(-3px) rotate(-45deg);
+.req > [completed] {
+  border-color: hsl(120deg, 75%, 50%);
+  border-right-color: transparent;
+  border-top-color: transparent;
+  border-bottom-style: solid;
+  border-left-style: solid;
+  --height: 2px;
+  transform: translateY(-3px) rotate(-45deg);
 }
-.req-header>div {
+.req-header > div {
+  position: absolute;
+  left: -1em;
+  width: 0.75em;
+  height: 0.75em;
+  top: 40%;
+  border: solid transparent 0.375em;
+  border-top: solid white 0.375em;
+  transform-origin: 0.375em 0.1875em;
+  transition: transform 300ms;
+}
+.req-header>i {
+    padding-left: 10px;
+}
+.req-header > [collapsed] {
+  transform: rotate(-90deg);
+}
+[fulfilled][progress] > .progress::before {
+    background-color: hsl(120deg, 75%, 50%);
+}
+.progress {
+    position:relative;
+    width: 100%;
+    transition: height 300ms, background-color 300ms;
+}
+.progress::before {
+    width: 100%;
+    height: 100%;
+    transform-origin: left;
+}
+[progress] > .progress::before {
     position: absolute;
-    left: -1em;
-    width: 0.75em;
-    height: 0.75em;
-    top: 40%;
-    border: solid transparent 0.375em;
-    border-top:solid white 0.375em;
-    transform-origin: 0.375em 0.1875em;
-    transition: transform 300ms;
+    background-color: hsl(60deg, 75%, 50%);
+    content:"";
+    transform: scaleX(var(--progress));
+    transition: transform 300ms, background-color 300ms;
 }
-.req-header>[collapsed] {
-    transform: rotate(-90deg);
+[progress] > .progress {
+    background-color: #ffffff18;
+    height: 2px;
 }
 </style>

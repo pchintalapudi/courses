@@ -36,7 +36,6 @@ export function requisite_parser(requisites: string) {
     if (w && w !== "permission" && w !== "of" && w !== "instructor") {
         built.push(w);
     }
-    console.log(built);
     return built;
 }
 

@@ -2,7 +2,14 @@
   <section class="tree">
     <h2
       @click="collapsed=!collapsed"
-    ><div :collapsed="collapsed"></div>{{reqs.loading ? 'Loading Title...' : reqs.reqs.short_title + " " + reqs.reqs.title}}</h2>
+      :fulfilled="!!reqs.reqs.fulfilled"
+      :progress="reqs.reqs.percent_fulfilled !== undefined"
+      :style="reqs.reqs.percent_fulfilled !== undefined && `--progress:${reqs.reqs.percent_fulfilled / 100}`"
+    >
+      <div :collapsed="collapsed"></div>
+      {{reqs.loading ? 'Loading Title...' : reqs.reqs.short_title + " " + reqs.reqs.title}}
+      <span class="progress"></span>
+    </h2>
     <div v-if="has_progress && !collapsed">
       <requirement-vue
         v-for="(req, idx) in reqs.reqs.reqs"
@@ -42,7 +49,10 @@ export default Vue.extend({
       return this.$store.state.requirements.manifest.get(this.requirements);
     },
     has_progress(): boolean {
-      return this.$store.state.requirements.manifest_tracker && has_progress(this.reqs.reqs);
+      return (
+        this.$store.state.requirements.manifest_tracker &&
+        has_progress(this.reqs.reqs)
+      );
     },
     as_progress(): ProgressJSON {
       return this.reqs.reqs as ProgressJSON;
@@ -56,22 +66,48 @@ h2 {
   cursor: pointer;
   margin-left: -2em;
   position: relative;
+  display: flex;
+  flex-flow: row wrap;
 }
 .tree {
-    padding-left: 4em;
+  padding-left: 4em;
 }
-h2>div {
+h2 > div {
+  position: absolute;
+  left: -1em;
+  width: 0.75em;
+  height: 0.75em;
+  top: 40%;
+  border: solid transparent 0.375em;
+  border-top: solid white 0.375em;
+  transform-origin: 0.375em 0.1875em;
+  transition: transform 300ms;
+}
+h2 > [collapsed] {
+  transform: rotate(-90deg);
+}
+[fulfilled][progress] > .progress::before {
+    background-color: hsl(120deg, 75%, 50%);
+}
+.progress {
+    position:relative;
+    width: 100%;
+    transition: height 300ms, background-color 300ms;
+}
+.progress::before {
+    width: 100%;
+    height: 100%;
+    transform-origin: left;
+}
+[progress] > .progress::before {
     position: absolute;
-    left: -1em;
-    width: 0.75em;
-    height: 0.75em;
-    top: 40%;
-    border: solid transparent 0.375em;
-    border-top:solid white 0.375em;
-    transform-origin: 0.375em 0.1875em;
-    transition: transform 300ms;
+    background-color: hsl(60deg, 75%, 50%);
+    content:"";
+    transform: scaleX(var(--progress));
+    transition: transform 300ms, background-color 300ms;
 }
-h2>[collapsed] {
-    transform: rotate(-90deg);
+[progress] > .progress {
+    background-color: #ffffff18;
+    height: 2px;
 }
 </style>

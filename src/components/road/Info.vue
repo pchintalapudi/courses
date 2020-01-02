@@ -213,6 +213,7 @@ h6 {
   align-items: center;
   justify-content: space-between;
   background-color: hsl(var(--bg-color), 75%, 50%);
+  transition: background-color 500ms;
 }
 .head > h3 {
   display: flex;
