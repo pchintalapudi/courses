@@ -1,7 +1,7 @@
 <template>
   <article>
     <section v-if="is_req">
-      <h3 class="req"><div class="completion"></div>{{req.req}}</h3>
+      <h3 class="req"><div class="completion" :completed="req.fulfilled"></div>{{req.req}}</h3>
     </section>
     <section class="children" v-else>
       <h3 @click="collapsed=!collapsed" class="req-header"><div :collapsed="collapsed"></div>{{req.title}} <i>{{req.threshold_desc}} from</i></h3>
@@ -65,10 +65,22 @@ export default Vue.extend({
 .req>.completion {
     position:absolute;
     left:-1em;
-    top: calc(50% - 1px);
-    bottom: calc(50% - 1px);
+    --height: 1px;
+    top: calc(50% - var(--height));
+    bottom: calc(50% - var(--height));
     width: 0.75em;
-    background-color: black;
+    border: solid hsl(0, 0%, 80%) var(--height);
+    transition: border-color 300ms, border-width 300ms, border-style 300ms, top 300ms, bottom 300ms, transform 300ms;
+}
+.req>[completed] {
+    border-style: none;
+    border-color: hsl(120deg, 75%, 50%);
+    border-right-color: transparent;
+    border-top-color: transparent;
+    border-bottom-style: solid;
+    border-left-style: solid;
+    --height: 2px;
+    transform: translateY(-3px) rotate(-45deg);
 }
 .req-header>div {
     position: absolute;
@@ -77,7 +89,7 @@ export default Vue.extend({
     height: 0.75em;
     top: 40%;
     border: solid transparent 0.375em;
-    border-top:solid black 0.375em;
+    border-top:solid white 0.375em;
     transform-origin: 0.375em 0.1875em;
     transition: transform 300ms;
 }

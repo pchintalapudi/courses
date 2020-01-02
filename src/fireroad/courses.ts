@@ -91,3 +91,19 @@ export class CourseRequester {
 export function is_full_course(course: CourseJSON): course is FullCourseJSON {
     return (course as FullCourseJSON).lecture_units !== undefined;
 }
+function range(
+    num: number,
+    start: number,
+    end: number,
+    out_start: number,
+    out_end: number
+) {
+    return (
+        out_start + ((out_end - out_start) * (num - start)) / (end - start)
+    );
+}
+export function compute_color(course: string) {
+    const num = parseInt(course, 10);
+    const hue = Number.isNaN(num) ? 30 : Number(range(num, 1, 24, 120, 280).toFixed(0));
+    return hue;
+}

@@ -20,8 +20,10 @@ body,
   padding: 0;
   height: 100vh;
   width: 100vw;
+  background-color: #121212;
+  color: hsl(0deg, 0%, 80%);
 }
-#app {
+#app, #app input {
   display: flex;
   font-family: "Titillium Web", sans-serif;
 }

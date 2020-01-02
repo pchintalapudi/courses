@@ -67,7 +67,7 @@ h2>div {
     height: 0.75em;
     top: 40%;
     border: solid transparent 0.375em;
-    border-top:solid black 0.375em;
+    border-top:solid white 0.375em;
     transform-origin: 0.375em 0.1875em;
     transition: transform 300ms;
 }

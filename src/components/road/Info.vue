@@ -67,7 +67,12 @@
 </template>
 <script lang="ts">
 import Vue from "vue";
-import { CourseJSON, is_full_course, FullCourseJSON } from "@/fireroad";
+import {
+  CourseJSON,
+  is_full_course,
+  FullCourseJSON,
+  compute_color
+} from "@/fireroad";
 import { Quarter } from "@/store/road";
 import { is_gir, requisite_parser, de_gir } from "@/fireroad/demystify";
 export default Vue.extend({
@@ -175,27 +180,6 @@ export default Vue.extend({
       }
       return fragments.slice(0, Math.max(i, 2)).join(" ") + " ...";
     },
-    range(
-      num: number,
-      start: number,
-      end: number,
-      out_start: number,
-      out_end: number
-    ) {
-      return (
-        out_start + ((out_end - out_start) * (num - start)) / (end - start)
-      );
-    },
-    computeColor(course: string) {
-      const num = parseInt(course, 10);
-      if (Number.isNaN(num)) {
-        return "30deg"; // "hsl(30deg, 75%, 50%)";
-      }
-      const hue = Number(
-        this.range(num, 1, 24, 120, 280).toFixed(0)
-      ).toString();
-      return hue + "deg"; // `hsl(${hue}deg, 75%, 50%)`;
-    },
     navigate(req: string) {
       if (is_gir(req)) {
         req = de_gir(req)[0];
@@ -203,6 +187,9 @@ export default Vue.extend({
       if (req.indexOf("permission of instructor") === -1) {
         this.$emit("push-course", req);
       }
+    },
+    computeColor(id: string) {
+      return compute_color(id);
     }
   }
 });
@@ -259,9 +246,10 @@ h6 {
 .info-card {
   display: flex;
   flex-flow: column nowrap;
-  background-color: white;
-  border: solid #dddddd 2px;
+  background-color: #121212;
   border-radius: 2px;
+  box-shadow: 0px 0px 5px #121212;
+  margin-right: 2em;
 }
 h4,
 h5 {

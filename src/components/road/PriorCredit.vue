@@ -44,14 +44,14 @@ export default Vue.extend({
   },
   methods: {
     remove(j: number) {
-      this.$store.commit("remove_course", { year: -1, quarter: 0, idx: j });
+      this.$emit("remove-course", { year: -1, quarter: 0, idx: j });
     }
   }
 });
 </script>
 <style scoped>
 .prior-credit-header {
-  background-color: #dddddd;
+  background-color: #ffffff10;
   height: 2.5em;
   display: flex;
   align-items: center;
@@ -60,8 +60,8 @@ export default Vue.extend({
   padding: 0.5em;
 }
 .collapsible {
-  border-right: solid black 2px;
-  border-top: solid black 2px;
+  border-right: solid white 2px;
+  border-top: solid white 2px;
   height: 0.5em;
   width: 0.5em;
   transform: rotate(135deg);
@@ -82,7 +82,6 @@ export default Vue.extend({
   transition: background-color 500ms;
   flex-basis: 150px;
   flex-flow: row wrap;
-  background-color: white;
   align-items: center;
   justify-content: space-evenly;
 }

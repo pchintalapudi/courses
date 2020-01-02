@@ -1,4 +1,4 @@
-import { CourseRequester, CourseJSON, FullCourseJSON, is_full_course } from './courses';
+import { CourseRequester, CourseJSON, FullCourseJSON, is_full_course, compute_color } from './courses';
 import {
     RequirementsRequester,
     RequirementsJSON,
@@ -27,7 +27,8 @@ export {
     RequirementGroup,
     is_requirement,
     RoadJSON,
-    Class
+    Class,
+    compute_color
 };
 export { is_full_course };
 export { Trie };

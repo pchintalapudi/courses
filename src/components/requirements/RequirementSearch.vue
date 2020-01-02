@@ -6,10 +6,10 @@
       id="req-search"
       v-model="search_text"
       @click.stop="view_results=true"
-      @keydown.enter="enter"
+      @keydown="key"
       :disabled="disable"
     />
-    <section class="results" v-if="view_results">
+    <section class="results" v-if="view_results && search_results.length">
       <button
         v-for="result in search_results"
         :key="result.reqs.list_id"
@@ -32,7 +32,8 @@ export default Vue.extend({
     return {
       search_text: "",
       view_results: false,
-      ignore_set: new Set(["by", "of", "in", "as", "the", "and"])
+      ignore_set: new Set(["by", "of", "in", "as", "the", "and"]),
+      timeout: 0
     };
   },
   computed: {
@@ -60,9 +61,16 @@ export default Vue.extend({
       this.$emit("load-requirement", result.reqs.list_id);
       this.view_results = false;
     },
-    enter() {
-      if (this.search_results.length === 1) {
-        this.show(this.search_results[0]);
+    key(key: KeyboardEvent) {
+      if (key.key === "Enter") {
+        if (this.search_results.length === 1 || this.timeout) {
+          this.show(this.search_results[0]);
+        } else {
+          this.timeout = window.setTimeout(() => (this.timeout = 0), 500);
+        }
+      } else {
+        window.clearTimeout(this.timeout);
+        this.timeout = 0;
       }
     }
   }
@@ -70,11 +78,17 @@ export default Vue.extend({
 </script>
 <style scoped>
 #req-search {
-  border: solid #e0e0e0 1px;
+  border: solid #ffffff18 1px;
+  background-color: #ffffff10;
+  color: white;
   border-radius: 5px;
   padding: 5px;
   margin: 5px;
-  width: 200px;
+}
+#req-search:disabled {
+  background-color: #ffffff04;
+  border-color: #ffffff08;
+  cursor: not-allowed;
 }
 .search-bar {
   position: relative;
@@ -86,23 +100,24 @@ export default Vue.extend({
   right: 0;
   overflow: auto;
   max-height: 50vh;
-  border: solid #dddddd 2px;
+  background-color: #202020;
   z-index: 1;
 }
 .search-result {
   padding: 5px;
   overflow: hidden;
-  background-color: white;
+  background-color: transparent;
+  color: hsl(0, 0%, 80%);
   cursor: pointer;
   border: none;
   display: flex;
   width: 100%;
 }
 .search-result:hover {
-  background-color: #eeeeee;
+  background-color: #ffffff20;
 }
 .search-result:active {
-  background-color: #dddddd;
+  background-color: #ffffff28;
 }
 .search-result > * {
   padding: 5px;

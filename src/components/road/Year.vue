@@ -94,12 +94,12 @@ export default Vue.extend({
             ? cls.in_class_hours + cls.out_of_class_hours
             : Number.NaN
         );
-        const nan = hours.reduce((old, next) => old || Number.isNaN(next), false);
-        const sum = hours.reduce((old, next) => old + next || 0, 0);
-      return `Hours: ${nan ? '≥' : ''}${Number(sum.toFixed(2))}`;
+      const nan = hours.reduce((old, next) => old || Number.isNaN(next), false);
+      const sum = hours.reduce((old, next) => old + next || 0, 0);
+      return `Hours: ${nan ? "≥" : ""}${Number(sum.toFixed(2))}`;
     },
     remove(year: number, quarter: number, idx: number) {
-        this.$store.commit("roads/remove_course", {year, quarter, idx});
+      this.$emit("remove-course", { year, quarter, idx });
     }
   }
 });
@@ -112,7 +112,7 @@ export default Vue.extend({
 }
 .year-header,
 .quarter-header {
-  background-color: #dddddd;
+  background-color: #ffffff10;
   height: 2.5em;
   display: flex;
   align-items: center;
@@ -121,8 +121,8 @@ export default Vue.extend({
   padding: 0.5em;
 }
 .collapsible {
-  border-right: solid black 2px;
-  border-top: solid black 2px;
+  border-right: solid white 2px;
+  border-top: solid white 2px;
   height: 0.5em;
   width: 0.5em;
   transform: rotate(135deg);
@@ -134,7 +134,7 @@ export default Vue.extend({
   transform: rotate(-45deg);
 }
 .quarter-header {
-  background-color: #eeeeee;
+  background-color: #ffffff08;
   flex-grow: 0;
 }
 .quarter {
@@ -147,7 +147,6 @@ export default Vue.extend({
   transition: background-color 500ms;
   flex-basis: 150px;
   flex-flow: row wrap;
-  background-color: white;
   align-items: center;
   justify-content: space-evenly;
 }

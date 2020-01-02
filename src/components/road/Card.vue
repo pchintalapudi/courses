@@ -11,7 +11,7 @@
 </template>
 <script lang="ts">
 import Vue from "vue";
-import { CourseJSON } from "@/fireroad";
+import { CourseJSON, compute_color } from "@/fireroad";
 export default Vue.extend({
   props: { course_id: String },
   computed: {
@@ -27,9 +27,7 @@ export default Vue.extend({
       return this.truncate_name(this.name);
     },
     color(): string {
-      // Looks sketchy but works so -\ :| /-
-      const number = parseInt(this.course_id, 10);
-      return this.computeColor(number);
+      return `hsl(${compute_color(this.course_id)}deg, 75%, 50%)`;
     }
   },
   methods: {
@@ -44,26 +42,6 @@ export default Vue.extend({
         length += fragments[i].length;
       }
       return fragments.slice(0, Math.max(i, 2)).join(" ") + " ...";
-    },
-    range(
-      num: number,
-      start: number,
-      end: number,
-      out_start: number,
-      out_end: number
-    ) {
-      return (
-        out_start + ((out_end - out_start) * (num - start)) / (end - start)
-      );
-    },
-    computeColor(num: number) {
-      if (Number.isNaN(num)) {
-        return "hsl(30deg, 75%, 50%)";
-      }
-      const hue = Number(
-        this.range(num, 1, 24, 120, 280).toFixed(0)
-      ).toString();
-      return `hsl(${hue}deg, 75%, 50%)`;
     }
   }
 });

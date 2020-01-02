@@ -13,6 +13,7 @@
         <i>Add some requirements!</i>
       </section>
     </aside>
+    <div class="gutter"></div>
     <section>
       <span class="header">
         <span class="auth">TODO Auth Stuff</span>
@@ -50,6 +51,7 @@
           :placing="inspecting"
           @load-course="inspect"
           @place-course="place(-1, 0)"
+          @remove-course="remove_course"
         ></prior-credit-vue>
         <year-vue
           v-for="(year, idx) in years"
@@ -60,6 +62,7 @@
           :allowed="allowed"
           @load-course="inspect"
           @place-course="place(idx, $event)"
+          @remove-course="remove_course"
         ></year-vue>
       </article>
       <article v-else class="no-roads">
@@ -184,7 +187,6 @@ export default Vue.extend({
       this.editing = this.$store.state.roads.course_roads.length;
       this.editingText = "Untitled";
       this.$store.commit("roads/new_road", this.editingText);
-      this.$nextTick(() => (input.target as any).focus());
     },
     view(idx: number) {
       if (idx !== this.viewing) {
@@ -219,6 +221,18 @@ export default Vue.extend({
         this.close_info();
         this.update_progresses();
       }
+    },
+    remove_course({
+      year,
+      quarter,
+      idx
+    }: {
+      year: number;
+      quarter: 0 | 1 | 2 | 3;
+      idx: number;
+    }) {
+      this.$store.commit("roads/remove_course", { year, quarter, idx });
+      this.update_progresses();
     },
     push_course(course: string) {
       this.inspection_history.splice(
@@ -275,14 +289,18 @@ main {
   flex-flow: row nowrap;
   flex: 1;
 }
+.gutter {
+  background-color: #ffffff04;
+  flex: 0.01;
+}
 .requirements {
   flex: 0.25;
   display: flex;
   flex-flow: column nowrap;
-  background-color: #dddddd;
+  max-width: 25vw;
 }
-.requirements + * {
-  flex: 0.75;
+.requirements + * + * {
+  flex: 0.74;
   display: flex;
   flex-flow: column nowrap;
 }
@@ -293,12 +311,12 @@ main {
 .roads {
   display: flex;
   flex-flow: row nowrap;
+  background-color: #ffffff04;
 }
 .road-list {
   display: flex;
   flex-flow: row wrap;
   flex: 1;
-  background-color: #eeeeee;
   overflow: auto;
 }
 .road-title {
@@ -319,6 +337,10 @@ main {
   width: 1.5em;
   border: none;
   cursor: pointer;
+  border-radius: 50%;
+  background-color: transparent;
+  transition: background-color, 150ms;
+  color: white;
 }
 .new-road:hover {
   background-color: #0088ff44;
@@ -346,7 +368,9 @@ i {
   flex: 1;
 }
 input {
-  border: solid #dddddd 1px;
+  border: solid #ffffff18 1px;
+  background-color: #ffffff10;
+  color: white;
   border-radius: 5px;
   padding: 5px;
   margin: 5px;
