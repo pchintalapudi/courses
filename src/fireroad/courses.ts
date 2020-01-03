@@ -1,4 +1,12 @@
 import { URLBuilder } from './base';
+import { error } from './debug';
+import {
+    offline_get_all_courses,
+    offline_last_course_update,
+    offline_update_all_courses,
+    offline_update_course,
+    offline_retrieve_from_course_file
+} from './offline_cache';
 
 export interface CourseJSON {
     subject_id: string;
@@ -62,7 +70,23 @@ export class CourseRequester {
 
     public async all<full = false>(full: boolean):
         Promise<full extends true ? FullCourseJSON[] : CourseJSON[]> {
-        return (await window.fetch(URLBuilder.path('courses').path('all').query('full', '' + full).build())).json();
+        const all_promise = window.fetch(URLBuilder.path('courses').path('all').query('full', '' + full).build());
+        try {
+            const response = await all_promise;
+            if (response.ok) {
+                if ((await offline_last_course_update()).getTime() < Date.now() - 8.64e+7) {
+                    window.fetch(URLBuilder.path('courses').path('all').query('full', 'true').build()).then(async r => {
+                        if (r.ok) {
+                            offline_update_all_courses(await r.json());
+                        }
+                    });
+                }
+                return response.json();
+            }
+        } catch (err) {
+            error(err);
+        }
+        return offline_get_all_courses() as any;
     }
 
     public async in_department<full = false>(dept: string, full: boolean):
@@ -72,7 +96,18 @@ export class CourseRequester {
     }
 
     public async load(id: string): Promise<FullCourseJSON> {
-        return (await window.fetch(URLBuilder.path('courses').path('lookup').path(id).build())).json();
+        const promise = window.fetch(URLBuilder.path('courses').path('lookup').path(id).build());
+        try {
+            const response = await promise;
+            if (response.ok) {
+                const course = await response.json();
+                offline_update_course(course);
+                return course;
+            }
+        } catch (err) {
+            error(err);
+        }
+        return offline_retrieve_from_course_file(id);
     }
 
     public async search<full = false>(query: string, full: boolean, filters: CourseFilter = {}):

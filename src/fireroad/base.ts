@@ -47,6 +47,16 @@ class _URLBuilder {
         }
         return final.join('');
     }
+
+    public clone() {
+        const builder = new _URLBuilder(this._domain);
+        builder._protocol = this._protocol;
+        builder._port = this._port;
+        builder._path = this._path.slice(0);
+        builder._query = this._query.slice(0);
+        builder._fragment = this._fragment;
+        return builder;
+    }
 }
 
 // tslint:disable-next-line: max-classes-per-file

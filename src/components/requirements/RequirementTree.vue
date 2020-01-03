@@ -8,9 +8,11 @@
     >
       <div :collapsed="collapsed"></div>
       {{reqs.loading ? 'Loading Title...' : reqs.reqs.short_title + " " + reqs.reqs.title}}
-      <span class="progress"></span>
+      <span
+        class="progress"
+      ></span>
     </h2>
-    <div v-if="has_progress && !collapsed">
+    <div v-if="(has_progress || has_requirement) && !collapsed">
       <requirement-vue
         v-for="(req, idx) in reqs.reqs.reqs"
         :key="`requirement ${reqs.reqs.list_id} idx ${idx}`"
@@ -47,6 +49,9 @@ export default Vue.extend({
   computed: {
     reqs(): Requirements {
       return this.$store.state.requirements.manifest.get(this.requirements);
+    },
+    has_requirement(): boolean {
+      return has_requirements(this.reqs.reqs);
     },
     has_progress(): boolean {
       return (
@@ -87,27 +92,27 @@ h2 > [collapsed] {
   transform: rotate(-90deg);
 }
 [fulfilled][progress] > .progress::before {
-    background-color: hsl(120deg, 75%, 50%);
+  background-color: hsl(120deg, 75%, 50%);
 }
 .progress {
-    position:relative;
-    width: 100%;
-    transition: height 300ms, background-color 300ms;
+  position: relative;
+  width: 100%;
+  transition: height 300ms, background-color 300ms;
 }
 .progress::before {
-    width: 100%;
-    height: 100%;
-    transform-origin: left;
+  width: 100%;
+  height: 100%;
+  transform-origin: left;
 }
 [progress] > .progress::before {
-    position: absolute;
-    background-color: hsl(60deg, 75%, 50%);
-    content:"";
-    transform: scaleX(var(--progress));
-    transition: transform 300ms, background-color 300ms;
+  position: absolute;
+  background-color: hsl(60deg, 75%, 50%);
+  content: "";
+  transform: scaleX(var(--progress));
+  transition: transform 300ms, background-color 300ms;
 }
 [progress] > .progress {
-    background-color: #ffffff18;
-    height: 2px;
+  background-color: #ffffff18;
+  height: 2px;
 }
 </style>

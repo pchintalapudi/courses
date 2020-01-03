@@ -1,4 +1,12 @@
 import { URLBuilder } from './base';
+import { error } from './debug';
+import {
+    offline_get_all_requirements,
+    offline_update_all_requirements,
+    offline_last_requirement_update,
+    offline_update_requirement,
+    offline_retrieve_from_requirement_file
+} from './offline_cache';
 export interface RequirementTitles {
     short_title: string;
     medium_title: string;
@@ -68,20 +76,35 @@ function snake_on_a_kebab(raw: any): any {
 
 export class RequirementsRequester {
     public async all_titles(): Promise<RequirementTitles[]> {
-        const json = await (await window.fetch(URLBuilder.path('requirements').path('list_reqs').build())).json();
-        const titles: RequirementTitles[] = [];
-        // tslint:disable-next-line: forin
-        for (const key in json) {
-            const internal = json[key];
-            titles.push({
-                list_id: key,
-                short_title: internal['short-title'],
-                medium_title: internal['medium-title'],
-                title_no_degree: internal['title-no-degree'],
-                title: internal.title,
-            });
+        const promise = window.fetch(URLBuilder.path('requirements').path('list_reqs').build());
+        try {
+            const response = await promise;
+            if (response.ok) {
+                const json = await response.json();
+                const titles: RequirementTitles[] = [];
+                // tslint:disable-next-line: forin
+                for (const key in json) {
+                    const internal = json[key];
+                    titles.push({
+                        list_id: key,
+                        short_title: internal['short-title'],
+                        medium_title: internal['medium-title'],
+                        title_no_degree: internal['title-no-degree'],
+                        title: internal.title,
+                    });
+                }
+                const builder = URLBuilder.path("requirements").path("get_json");
+                if ((await offline_last_requirement_update()).getTime() < Date.now() - 8.64e+7) {
+                    Promise.all(titles.map(t => window.fetch(builder.clone().path(t.list_id).build())))
+                        .then(async r => offline_update_all_requirements(await Promise.all(r.map(async resp => resp.ok ?
+                            snake_on_a_kebab(await resp.json()) : undefined).filter(resp => resp !== undefined))));
+                }
+                return titles;
+            }
+        } catch (err) {
+            error(err);
         }
-        return titles;
+        return offline_get_all_requirements();
     }
 
     public async requirements(id: string): Promise<RequirementsJSON> {
@@ -90,9 +113,19 @@ export class RequirementsRequester {
     }
 
     public async progress(id: string, road: RoadJSON): Promise<ProgressJSON> {
-        return snake_on_a_kebab(await (await window.fetch(
-            URLBuilder.path('requirements').path('progress').path(id).build(),
-            { method: "POST", body: JSON.stringify(road) })).json());
+        const promise = window.fetch(URLBuilder.path('requirements').path('progress').path(id).build(),
+            { method: "POST", body: JSON.stringify(road) });
+        try {
+            const response = await promise;
+            if (response.ok) {
+                const progress = await snake_on_a_kebab(await response.json());
+                const update = JSON.parse(JSON.stringify(progress));
+                update.list_id = id;
+                offline_update_requirement(update);
+                return progress;
+            }
+        } catch (err) { error(err); }
+        return offline_retrieve_from_requirement_file(id) as Promise<ProgressJSON>;
     }
 }
 

@@ -53,12 +53,11 @@ export const requirements: Module<typeof requirementState, any> = {
         },
         async progress({ commit, dispatch }, { reqs, courses }: { reqs: string[], courses: RoadJSON }) {
             // commit("_load", reqs);
-            const progress = Promise.all(reqs.map((req) => {
-                return server_requirements.progress(req, courses).then((p) => {
+            const progress = Promise.all(reqs.map((req) => server_requirements.progress(req, courses)
+                .then((p) => {
                     p.list_id = req;
                     return p;
-                });
-            }));
+                })));
             dispatch("_delay_progress_input", await progress);
         },
         async _delay_progress_input({ state, commit, dispatch }, progresses: ProgressJSON[]) {
