@@ -9,6 +9,7 @@
       v-if="!collapse"
       class="prior-credit-classes"
       :allowed="!!placing"
+      :forbidden="!!placing && classes.includes(placing)"
       @click="$emit('place-course')"
     >
       <card-vue
@@ -17,6 +18,9 @@
         :course_id="course"
         @load-course="$emit('load-course', $event)"
         @remove-course="remove(j)"
+        :year="-1"
+        :quarter="0"
+        :idx="j"
       ></card-vue>
     </div>
   </article>
@@ -91,6 +95,14 @@ export default Vue.extend({
 }
 .prior-credit-classes[allowed]:hover {
   background-color: #00ff0044;
+}
+.prior-credit-classes[forbidden] {
+  background-color: #ff000022;
+  cursor: pointer;
+}
+.prior-credit-classes[forbidden]:hover {
+  background-color: #ff000044;
+  cursor: pointer;
 }
 .prior-credit-header > p {
   padding: 0 10px;

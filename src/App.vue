@@ -27,4 +27,13 @@ body,
   display: flex;
   font-family: "Titillium Web", sans-serif;
 }
+.p-req, .c-req {
+    stroke:#ffffff66;
+    stroke-width: 2;
+    fill: transparent;
+    transition: stroke 150ms;
+}
+.c-req {
+    stroke-dasharray: 5 5;
+}
 </style>

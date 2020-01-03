@@ -26,6 +26,9 @@
             :course_id="course"
             @load-course="$emit('load-course', $event)"
             @remove-course="remove(idx, i, j)"
+            :year="idx"
+            :quarter="i"
+            :idx="j"
           ></card-vue>
         </div>
       </section>

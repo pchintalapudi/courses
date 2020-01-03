@@ -18,7 +18,7 @@ export function error(err: string) {
 }
 
 export function log(info: string) {
-    write_line(`${new Date().toUTCString()}: ${info}`)
+    write_line(`${new Date().toUTCString()}: ${info}`);
 }
 
 (window as any).reset_debug_file = reset_debug_file;

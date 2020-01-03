@@ -251,6 +251,7 @@ h6 {
   border-radius: 2px;
   box-shadow: 0px 0px 5px #121212;
   margin-right: 2em;
+  z-index: 3;
 }
 h4,
 h5 {

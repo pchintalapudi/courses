@@ -45,26 +45,29 @@
         </span>
         <button class="new-road" @click="newRoad">+</button>
       </nav>
-      <article v-if="viewing!==-1" class="road-display">
-        <prior-credit-vue
-          :classes="prior_credit"
-          :placing="inspecting"
-          @load-course="inspect"
-          @place-course="place(-1, 0)"
-          @remove-course="remove_course"
-        ></prior-credit-vue>
-        <year-vue
-          v-for="(year, idx) in years"
-          :key="`year ${idx}`"
-          :year="year"
-          :idx="idx"
-          :placing="inspecting"
-          :allowed="allowed"
-          @load-course="inspect"
-          @place-course="place(idx, $event)"
-          @remove-course="remove_course"
-        ></year-vue>
-      </article>
+      <div v-if="viewing!==-1" style="overflow:auto;">
+        <article class="road-display">
+          <svg id="graph" v-show="graph_mode" />
+          <prior-credit-vue
+            :classes="prior_credit"
+            :placing="inspecting"
+            @load-course="inspect"
+            @place-course="place(-1, 0)"
+            @remove-course="remove_course"
+          ></prior-credit-vue>
+          <year-vue
+            v-for="(year, idx) in years"
+            :key="`year ${idx}`"
+            :year="year"
+            :idx="idx"
+            :placing="inspecting"
+            :allowed="allowed"
+            @load-course="inspect"
+            @place-course="place(idx, $event)"
+            @remove-course="remove_course"
+          ></year-vue>
+        </article>
+      </div>
       <article v-else class="no-roads">
         <i>Let's get started!</i>
       </article>
@@ -92,12 +95,26 @@ import SearchVue from "./road/Search.vue";
 import InfoVue from "./road/Info.vue";
 import RequirementSearchVue from "./requirements/RequirementSearch.vue";
 import RequirementTreeVue from "./requirements/RequirementTree.vue";
-import { CourseJSON, RequirementTitles, RoadJSON, Class } from "@/fireroad";
+import {
+  CourseJSON,
+  RequirementTitles,
+  RoadJSON,
+  Class,
+  is_full_course,
+  FullCourseJSON
+} from "@/fireroad";
 import { Quarter } from "@/store/road";
+import {
+  graph_init,
+  graph_untrack,
+  graph_remove_all,
+  graph_track
+} from "@/dom/graph";
 export default Vue.extend({
   created() {
     this.$store.dispatch("classes/init");
     this.$store.dispatch("requirements/init");
+    graph_init();
   },
   components: {
     PriorCreditVue,
@@ -113,7 +130,9 @@ export default Vue.extend({
       editingText: "Untitled",
       inspecting: "",
       inspection_history: [] as string[],
-      maximize_info: false
+      maximize_info: false,
+      graph_mode: true,
+      retracks: new Map<string, number>()
     };
   },
   watch: {
@@ -186,11 +205,15 @@ export default Vue.extend({
     newRoad(input: any) {
       this.editing = this.$store.state.roads.course_roads.length;
       this.editingText = "Untitled";
+      graph_remove_all();
       this.$store.commit("roads/new_road", this.editingText);
+      this.$nextTick(() => this.$nextTick(() => this.graph_retrack(-1, 0)));
     },
     view(idx: number) {
       if (idx !== this.viewing) {
+        graph_remove_all();
         this.$store.commit("roads/view", idx);
+        this.$nextTick(() => this.graph_retrack(-1, 0));
         this.editing = -1;
       }
     },
@@ -213,6 +236,7 @@ export default Vue.extend({
     },
     place(idx: number, i: number) {
       if (this.inspecting) {
+        this.graph_detrack(idx, i);
         this.$store.commit("roads/add_course", {
           year: idx,
           quarter: i,
@@ -220,6 +244,7 @@ export default Vue.extend({
         });
         this.close_info();
         this.update_progresses();
+        this.$nextTick(() => this.graph_retrack(idx, i));
       }
     },
     remove_course({
@@ -231,8 +256,10 @@ export default Vue.extend({
       quarter: 0 | 1 | 2 | 3;
       idx: number;
     }) {
+      this.graph_detrack(year, quarter);
       this.$store.commit("roads/remove_course", { year, quarter, idx });
       this.update_progresses();
+      this.$nextTick(() => this.graph_retrack(year, quarter));
     },
     push_course(course: string) {
       this.inspection_history.splice(
@@ -279,6 +306,71 @@ export default Vue.extend({
         title: course.title,
         units: course.total_units
       };
+    },
+    graph_tracks(year: number, quarter: number) {
+      const tracks = [] as Array<[number, number]>;
+      if (year === -1) {
+        tracks.push([-1, 0]);
+      } else {
+        while (quarter < 4) {
+          tracks.push([year, quarter++]);
+        }
+      }
+      this.years
+        .slice(++year)
+        .forEach((_, y) =>
+          tracks.push(
+            [y + year, 0],
+            [y + year, 1],
+            [y + year, 2],
+            [y + year, 3]
+          )
+        );
+      return tracks;
+    },
+    graph_detrack(year: number, quarter: number) {
+      this.graph_tracks(year, quarter).forEach(tup => {
+        const str = `${tup[0]} ${tup[1]}`;
+        window.clearTimeout(this.retracks.get(str));
+        this.retracks.set(str, 0);
+        graph_untrack(
+          tup[0],
+          tup[1],
+          tup[0] === -1 ? this.prior_credit : this.years[tup[0]][tup[1]]
+        );
+      });
+    },
+    graph_retrack(year: number, quarter: number) {
+      this.graph_tracks(year, quarter).forEach(tup => {
+        const str = `${tup[0]} ${tup[1]}`;
+        if (!this.retracks.get(str)) {
+          this._graph_retrack(...tup);
+        }
+      });
+    },
+    _graph_retrack(year: number, quarter: number) {
+      const courses = (year === -1
+        ? this.prior_credit
+        : this.years[year][quarter]
+      ).map(course_id =>
+        this.$store.state.classes.manifest_updated
+          ? this.$store.state.classes.manifest.get(course_id)
+          : undefined
+      );
+      const fail = courses.reduce(
+        (old, next) => old || !next || !is_full_course(next),
+        false
+      );
+      const str = `${year} ${quarter}`;
+      if (fail) {
+        this.retracks.set(
+          str,
+          window.setTimeout(() => this._graph_retrack(year, quarter), 1000)
+        );
+      } else {
+        graph_track(year, quarter, courses as FullCourseJSON[]);
+        this.retracks.set(str, 0);
+      }
     }
   }
 });
@@ -353,7 +445,10 @@ main {
   flex: 1;
   display: flex;
   flex-flow: column nowrap;
-  overflow: auto;
+  position: relative;
+}
+.road-display > * {
+  z-index: 1;
 }
 .no-roads {
   justify-content: center;
@@ -392,5 +487,12 @@ input {
 }
 .reqs {
   overflow: auto;
+}
+#graph {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
 }
 </style>

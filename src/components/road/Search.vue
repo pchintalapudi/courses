@@ -82,7 +82,7 @@ export default Vue.extend({
   max-height: 50vh;
   background-color: #202020;
   border: solid #ffffff20 2px;
-  z-index: 1;
+  z-index: 3;
 }
 .search-result {
   padding: 5px;

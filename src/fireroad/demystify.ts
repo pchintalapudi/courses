@@ -17,8 +17,12 @@ function de_gir(id: string) {
 }
 
 const punctuation = new Set<string>(["(", ")", " ", ",", "/", "'", '"']);
+const cache = new Map<string, string[]>();
 
 export function requisite_parser(requisites: string) {
+    if (cache.has(requisites)) {
+        return cache.get(requisites)!;
+    }
     const building = [];
     const built: string[] = [];
     for (const char of requisites) {
@@ -36,7 +40,9 @@ export function requisite_parser(requisites: string) {
     if (w && w !== "permission" && w !== "of" && w !== "instructor") {
         built.push(w);
     }
-    return built;
+    const out = Array.from(new Set(built));
+    cache.set(requisites, out);
+    return out;
 }
 
 function is_gir(id: string) {
