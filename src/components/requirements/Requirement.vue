@@ -1,12 +1,9 @@
 <template>
   <article>
-    <section v-if="is_req">
-      <h3 class="req">
-        <div class="completion" :completed="req.fulfilled"></div>
-        {{req.req}}
-      </h3>
-    </section>
-    <section class="children" v-else>
+    <template v-if="is_req">
+      <h3 class="req" :completed="req.fulfilled">{{req.req}}</h3>
+    </template>
+    <section class="children" :collapsed="collapsed" v-else>
       <h3
         @click="collapsed=!collapsed"
         class="req-header"
@@ -14,10 +11,8 @@
         :progress="req.percent_fulfilled !== undefined && req.sat_courses.length > 0"
         :style="req.percent_fulfilled !== undefined && `--progress:${req.percent_fulfilled / 100}`"
       >
-        <div :collapsed="collapsed"></div>
         {{req.title}}
         <i>{{req.threshold_desc}} from</i>
-      <span class="progress"></span>
       </h3>
       <template v-if="!collapsed">
         <requirement-vue
@@ -47,14 +42,8 @@ export default Vue.extend({
     is_req(): boolean {
       return is_requirement(this.req);
     },
-    as_req(): Requirement {
-      return this.req as Requirement;
-    },
-    as_group(): RequirementGroup {
-      return this.req as RequirementGroup;
-    },
     children(): Array<Requirement | RequirementGroup> {
-      return this.as_group.reqs;
+      return (this.req as RequirementGroup).reqs;
     },
     key_prefix(): string {
       return this.name + this.idx;
@@ -67,8 +56,6 @@ export default Vue.extend({
 .req-header {
   cursor: pointer;
   margin-left: -2em;
-  display: flex;
-  flex-flow: row wrap;
 }
 .req,
 .req-header {
@@ -78,8 +65,10 @@ export default Vue.extend({
 }
 .children {
   padding-left: 2em;
+  position: relative;
 }
-.req > .completion {
+.req::before {
+  content: "";
   position: absolute;
   left: -1em;
   --height: 1px;
@@ -90,54 +79,48 @@ export default Vue.extend({
   transition: border-color 300ms, border-width 300ms, border-style 300ms,
     top 300ms, bottom 300ms, transform 300ms;
 }
-.req > [completed] {
+[completed]::before {
   border-color: hsl(120deg, 75%, 50%);
   border-right-color: transparent;
   border-top-color: transparent;
   border-bottom-style: solid;
   border-left-style: solid;
-  --height: 2px;
-  transform: translateY(-3px) rotate(-45deg);
+  --height: 3px;
+  transform: translateY(-3px) translateX(-3px) rotate(-45deg);
 }
-.req-header > div {
+.children::before {
+  content: "";
   position: absolute;
   left: -1em;
-  width: 0.75em;
-  height: 0.75em;
-  top: 40%;
+  top: 0.625em;
   border: solid transparent 0.375em;
   border-top: solid white 0.375em;
   transform-origin: 0.375em 0.1875em;
   transition: transform 300ms;
 }
-.req-header>i {
-    padding-left: 10px;
-}
-.req-header > [collapsed] {
+[collapsed]::before {
   transform: rotate(-90deg);
 }
-[fulfilled][progress] > .progress::before {
-    background-color: hsl(120deg, 75%, 50%);
+[fulfilled][progress]::after {
+  background-color: hsl(120deg, 75%, 50%);
 }
-.progress {
-    position:relative;
-    width: 100%;
-    transition: height 300ms, background-color 300ms;
+.req-header::before,
+.req-header::after {
+  content: "";
+  width: 100%;
+  height: 2px;
+  transform-origin: left;
+  background-color: #ffffff18;
+  position: absolute;
+  top: 100%;
+  left: 0;
 }
-.progress::before {
-    width: 100%;
-    height: 100%;
-    transform-origin: left;
+.req-header::after {
+  transform: scaleX(0);
+  transition: transform 300ms, background-color 300ms;
 }
-[progress] > .progress::before {
-    position: absolute;
-    background-color: hsl(60deg, 75%, 50%);
-    content:"";
-    transform: scaleX(var(--progress));
-    transition: transform 300ms, background-color 300ms;
-}
-[progress] > .progress {
-    background-color: #ffffff18;
-    height: 2px;
+[progress]::after {
+  background-color: hsl(60deg, 75%, 50%);
+  transform: scaleX(var(--progress));
 }
 </style>

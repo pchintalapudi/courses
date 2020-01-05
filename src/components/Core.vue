@@ -4,9 +4,10 @@
       <requirement-search-vue :disable="viewing===-1" @load-requirement="add_requirement"></requirement-search-vue>
       <section class="reqs" v-if="viewing!==-1">
         <requirement-tree-vue
-          v-for="req in requirements"
+          v-for="(req, idx) in requirements"
           :key="`Requirement ${req}`"
           :requirements="req"
+          @remove-requirement="remove_req(idx)"
         ></requirement-tree-vue>
       </section>
       <section v-else>
@@ -136,6 +137,7 @@ export default Vue.extend({
     this.courses.forEach(course =>
       this.$store.dispatch("classes/load", course)
     );
+    this.update_progresses();
     listener();
   },
   data() {
@@ -146,7 +148,8 @@ export default Vue.extend({
       inspection_history: [] as string[],
       maximize_info: false,
       graph_mode: true,
-      retracks: new Map<string, number>()
+      retracks: new Map<string, number>(),
+      progress_update: 0
     };
   },
   watch: {
@@ -307,11 +310,24 @@ export default Vue.extend({
       });
       this.$store.dispatch("roads/add_requirement", req);
     },
+    remove_req(idx: number) {
+      this.$store.dispatch("roads/remove_requirement", idx);
+    },
     update_progresses() {
-      this.$store.dispatch("requirements/progress", {
-        reqs: this.requirements,
-        courses: this.road_json
-      });
+      if (!this.progress_update) {
+        if (!this.$store.state.classes.manifest_updated) {
+          this.progress_update = window.setTimeout(() => {
+            this.progress_update = 0;
+            this.update_progresses();
+          }, 1000);
+        } else {
+          this.$store.dispatch("requirements/progress", {
+            reqs: this.requirements,
+            courses: this.road_json
+          });
+          this.progress_update = 0;
+        }
+      }
     },
     tracker(req: string): number {
       return this.$store.state.requirements.manifest.get(req)!.tracker;
@@ -525,6 +541,7 @@ input {
 }
 .reqs {
   overflow: auto;
+  flex: 1;
 }
 #graph {
   position: absolute;

@@ -1,18 +1,19 @@
 <template>
-  <section class="tree">
-    <h2
-      @click="collapsed=!collapsed"
+  <section class="tree" v-if="has_reqs">
+    <div
+      class="progress"
       :fulfilled="!!reqs.reqs.fulfilled"
       :progress="reqs.reqs.percent_fulfilled !== undefined"
+      :highlight="reqs.reqs.percent_fulfilled === 0 && !reqs.reqs.fulfilled"
       :style="reqs.reqs.percent_fulfilled !== undefined && `--progress:${reqs.reqs.percent_fulfilled / 100}`"
     >
-      <div :collapsed="collapsed"></div>
-      {{reqs.loading ? 'Loading Title...' : reqs.reqs.short_title + " " + reqs.reqs.title}}
-      <span
-        class="progress"
-      ></span>
-    </h2>
-    <div v-if="(has_progress || has_requirement) && !collapsed">
+      <h2
+        @click="collapsed=!collapsed"
+        :collapsed="collapsed"
+      >{{reqs.loading ? 'Loading Title...' : reqs.reqs.short_title + " " + reqs.reqs.title}}</h2>
+      <button @click="$emit('remove-requirement')">&times;</button>
+    </div>
+    <template v-if="(has_progress || has_requirement) && !collapsed">
       <requirement-vue
         v-for="(req, idx) in reqs.reqs.reqs"
         :key="`requirement ${reqs.reqs.list_id} idx ${idx}`"
@@ -20,9 +21,10 @@
         :idx="idx"
         :name="reqs.reqs.short_title + reqs.reqs.title"
       ></requirement-vue>
-    </div>
+    </template>
     <span v-else-if="!collapsed">Loading Requirements...</span>
   </section>
+  <span v-else>Loading Requirements...</span>
 </template>
 <script lang="ts">
 import Vue from "vue";
@@ -47,72 +49,116 @@ export default Vue.extend({
     return { collapsed: true };
   },
   computed: {
-    reqs(): Requirements {
+    reqs(): Requirements | undefined {
       return this.$store.state.requirements.manifest.get(this.requirements);
     },
     has_requirement(): boolean {
-      return has_requirements(this.reqs.reqs);
+      return (
+        this.$store.state.requirements.manifest_tracker &&
+        has_requirements(this.reqs!.reqs)
+      );
     },
     has_progress(): boolean {
       return (
         this.$store.state.requirements.manifest_tracker &&
-        has_progress(this.reqs.reqs)
+        has_progress(this.reqs!.reqs)
       );
     },
     as_progress(): ProgressJSON {
-      return this.reqs.reqs as ProgressJSON;
+      return this.reqs!.reqs as ProgressJSON;
+    },
+    has_reqs(): boolean {
+      return (
+        this.$store.state.requirements.manifest_tracker &&
+        this.reqs !== undefined
+      );
     }
   }
 });
 </script>
 <style scoped>
+.progress {
+  display: flex;
+  flex-flow: row nowrap;
+  position: relative;
+  align-items: center;
+}
+.progress::before {
+  box-sizing: content-box;
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background-color: #ffffff18;
+  top: 100%;
+  margin-left: -2em;
+  padding-right: 2em;
+}
+.progress::after {
+  box-sizing: content-box;
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background-color: hsl(60deg, 75%, 50%);
+  top: 100%;
+  margin-left: -2em;
+  padding-right: 2em;
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 300ms, background-color 300ms;
+}
+[fulfilled][progress]::after {
+  background-color: hsl(120deg, 75%, 50%);
+}
+[highlight][progress]::before {
+  background-color: hsl(0deg, 75%, 50%);
+}
+[progress]::after {
+  transform: scaleX(var(--progress));
+}
 h2 {
   font-size: 1rem;
   cursor: pointer;
   margin-left: -2em;
   position: relative;
-  display: flex;
-  flex-flow: row wrap;
+  flex: 1;
 }
 .tree {
   padding-left: 4em;
 }
-h2 > div {
+h2::before {
+  content: "";
   position: absolute;
   left: -1em;
-  width: 0.75em;
-  height: 0.75em;
   top: 40%;
   border: solid transparent 0.375em;
   border-top: solid white 0.375em;
   transform-origin: 0.375em 0.1875em;
   transition: transform 300ms;
 }
-h2 > [collapsed] {
+[collapsed]::before {
   transform: rotate(-90deg);
 }
-[fulfilled][progress] > .progress::before {
-  background-color: hsl(120deg, 75%, 50%);
+button {
+  border-radius: 50%;
+  min-height: 1.5em;
+  min-width: 1.5em;
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+  transition: opacity 150ms, background-color 150ms;
+  color: white;
+  opacity: 0;
+  margin: 5px;
 }
-.progress {
-  position: relative;
-  width: 100%;
-  transition: height 300ms, background-color 300ms;
+.tree:hover button {
+  opacity: 1;
 }
-.progress::before {
-  width: 100%;
-  height: 100%;
-  transform-origin: left;
+button:hover {
+  background-color: #ffffff22;
 }
-[progress] > .progress::before {
-  position: absolute;
-  background-color: hsl(60deg, 75%, 50%);
-  content: "";
-  transform: scaleX(var(--progress));
-  transition: transform 300ms, background-color 300ms;
-}
-[progress] > .progress {
-  background-color: #ffffff18;
-  height: 2px;
+button:active {
+  background-color: #ff000044;
 }
 </style>

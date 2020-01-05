@@ -139,6 +139,6 @@ function range(
 }
 export function compute_color(course: string) {
     const num = parseInt(course, 10);
-    const hue = Number.isNaN(num) ? 30 : Number(range(num, 1, 24, 60, 280).toFixed(0));
+    const hue = Number.isNaN(num) ? 30 : Number(range(num, 1, 24, 0, 1065).toFixed(0));
     return hue;
 }
