@@ -31,7 +31,7 @@ export default Vue.extend({
       return this.truncate_name(this.name);
     },
     color(): string {
-      return `hsl(${compute_color(this.course_id)}deg, 75%, 50%)`;
+      return `hsl(${compute_color(this.course_id)}deg, 75%, 45%)`;
     }
   },
   methods: {

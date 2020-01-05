@@ -29,14 +29,17 @@
             @click="view(idx)"
             @dblclick="edit(idx)"
           >
-            <p v-if="editing!==idx">{{name}}</p>
+            <p class="road-title" v-if="editing!==idx">
+              <b>{{name}}</b>
+              <button class="delete-road" @click.stop="remove_road(idx)">&times;</button>
+            </p>
             <input
               type="text"
               name="road-editor"
               id="road-editor"
               v-model="editingText"
-              @keydown.enter="editing=-1"
-              @blur="editing=-1"
+              @keydown.enter="finish_editing"
+              @blur="finish_editing"
               @click.stop
               v-else
             />
@@ -104,17 +107,11 @@ import {
   FullCourseJSON
 } from "@/fireroad";
 import { Quarter } from "@/store/road";
-import {
-  graph_init,
-  graph_untrack,
-  graph_remove_all,
-  graph_track
-} from "@/dom/graph";
+import { graph_untrack, graph_track } from "@/dom/graph";
 export default Vue.extend({
   created() {
     this.$store.dispatch("classes/init");
     this.$store.dispatch("requirements/init");
-    graph_init();
   },
   components: {
     PriorCreditVue,
@@ -123,6 +120,21 @@ export default Vue.extend({
     InfoVue,
     RequirementSearchVue,
     RequirementTreeVue
+  },
+  async mounted() {
+    const listener = () => {
+      this.graph_detrack(-1, 0);
+      this.graph_retrack(-1, 0);
+    };
+    window.addEventListener("resize", listener);
+    this.$once("hook:beforeDestroy", () =>
+      window.removeEventListener("resize", listener)
+    );
+    await this.$store.dispatch("roads/load");
+    this.courses.forEach(course =>
+      this.$store.dispatch("classes/load", course)
+    );
+    listener();
   },
   data() {
     return {
@@ -138,7 +150,7 @@ export default Vue.extend({
   watch: {
     editingText(next) {
       if (this.editing > -1) {
-        this.$store.commit("roads/update_name", {
+        this.$store.dispatch("roads/update_name", {
           road: this.editing,
           name: this.editingText
         });
@@ -202,18 +214,28 @@ export default Vue.extend({
     }
   },
   methods: {
+    finish_editing() {
+      this.editing = -1;
+      this.$store.dispatch("roads/save");
+    },
     newRoad(input: any) {
+      if (this.editing !== -1) {
+        this.$store.dispatch("save");
+      }
       this.editing = this.$store.state.roads.course_roads.length;
       this.editingText = "Untitled";
-      graph_remove_all();
-      this.$store.commit("roads/new_road", this.editingText);
+      this.graph_detrack(-1, 0);
+      this.$store.dispatch("roads/new_road", this.editingText);
       this.$nextTick(() => this.$nextTick(() => this.graph_retrack(-1, 0)));
     },
     view(idx: number) {
       if (idx !== this.viewing) {
-        graph_remove_all();
-        this.$store.commit("roads/view", idx);
+        this.graph_detrack(-1, 0);
+        this.$store.dispatch("roads/view", idx);
         this.$nextTick(() => this.graph_retrack(-1, 0));
+        if (this.editing !== -1) {
+          this.$store.dispatch("save");
+        }
         this.editing = -1;
       }
     },
@@ -237,7 +259,7 @@ export default Vue.extend({
     place(idx: number, i: number) {
       if (this.inspecting) {
         this.graph_detrack(idx, i);
-        this.$store.commit("roads/add_course", {
+        this.$store.dispatch("roads/add_course", {
           year: idx,
           quarter: i,
           course: this.inspecting
@@ -257,7 +279,7 @@ export default Vue.extend({
       idx: number;
     }) {
       this.graph_detrack(year, quarter);
-      this.$store.commit("roads/remove_course", { year, quarter, idx });
+      this.$store.dispatch("roads/remove_course", { year, quarter, idx });
       this.update_progresses();
       this.$nextTick(() => this.graph_retrack(year, quarter));
     },
@@ -285,7 +307,7 @@ export default Vue.extend({
         reqs: [req],
         courses: this.road_json
       });
-      this.$store.commit("roads/add_requirement", req);
+      this.$store.dispatch("roads/add_requirement", req);
     },
     update_progresses() {
       this.$store.dispatch("requirements/progress", {
@@ -329,24 +351,28 @@ export default Vue.extend({
       return tracks;
     },
     graph_detrack(year: number, quarter: number) {
-      this.graph_tracks(year, quarter).forEach(tup => {
-        const str = `${tup[0]} ${tup[1]}`;
-        window.clearTimeout(this.retracks.get(str));
-        this.retracks.set(str, 0);
-        graph_untrack(
-          tup[0],
-          tup[1],
-          tup[0] === -1 ? this.prior_credit : this.years[tup[0]][tup[1]]
-        );
-      });
+      if (this.viewing > -1) {
+        this.graph_tracks(year, quarter).forEach(tup => {
+          const str = `${tup[0]} ${tup[1]}`;
+          window.clearTimeout(this.retracks.get(str));
+          this.retracks.set(str, 0);
+          graph_untrack(
+            tup[0],
+            tup[1],
+            tup[0] === -1 ? this.prior_credit : this.years[tup[0]][tup[1]]
+          );
+        });
+      }
     },
     graph_retrack(year: number, quarter: number) {
-      this.graph_tracks(year, quarter).forEach(tup => {
-        const str = `${tup[0]} ${tup[1]}`;
-        if (!this.retracks.get(str)) {
-          this._graph_retrack(...tup);
-        }
-      });
+      if (this.viewing > -1) {
+        this.graph_tracks(year, quarter).forEach(tup => {
+          const str = `${tup[0]} ${tup[1]}`;
+          if (!this.retracks.get(str)) {
+            this._graph_retrack(...tup);
+          }
+        });
+      }
     },
     _graph_retrack(year: number, quarter: number) {
       const courses = (year === -1
@@ -371,6 +397,11 @@ export default Vue.extend({
         graph_track(year, quarter, courses as FullCourseJSON[]);
         this.retracks.set(str, 0);
       }
+    },
+    remove_road(idx: number) {
+      this.graph_detrack(-1, 0);
+      this.$store.dispatch("roads/delete_road", idx);
+      this.$nextTick(() => this.graph_retrack(-1, 0));
     }
   }
 });
@@ -494,5 +525,27 @@ input {
   height: 100%;
   pointer-events: none;
   z-index: 0;
+}
+.delete-road {
+  opacity: 0;
+  font-size: 1.25em;
+  height: 1.5em;
+  width: 1.5em;
+  border-radius: 50%;
+  color: white;
+  background-color: transparent;
+  transition: background-color 150ms, opacity 150ms;
+  border: none;
+  margin-left: 1em;
+  cursor: pointer;
+}
+.road-title:hover > .delete-road {
+  opacity: 1;
+}
+.delete-road:hover {
+  background-color: #ffffff18;
+}
+.delete-road:active {
+  background-color: hsla(0deg, 75%, 50%, 20%);
 }
 </style>
