@@ -1,16 +1,38 @@
 <template>
   <article class="year">
-    <span class="year-header" @click="full_collapse=!full_collapse">
+    <span class="year-header" @click="toggle_full" :collapsed="full_collapse">
       <b>{{`Year ${idx+1}`}}</b>
-      <div class="collapsible" :collapsed="full_collapse"></div>
+      <span class="spacer"></span>
+      <div v-if="full_collapse" class="collapsed-year">
+        <mini-card-vue
+          v-for="course in courses"
+          :key="`year ${idx} quarter ${course.quarter} course ${course.idx}`"
+          :course_id="course.course"
+          @load-course="$emit('load-course', $event)"
+          :year="idx"
+          :quarter="course.quarter"
+          :idx="course.idx"
+        ></mini-card-vue>
+      </div>
     </span>
     <article v-if="!full_collapse" class="year-body">
       <section v-for="(quarter, i) in year" :key="`year ${idx} quarter ${i}`" class="quarter">
-        <span class="quarter-header" @click="collapsed.splice(i, 1, !collapsed[i])">
+        <span class="quarter-header" @click="toggle_collapse(i)" :collapsed="collapsed[i]">
           <i>{{quarter_label(i)}}</i>
           <p>{{unit_count(i)}}</p>
           <p>{{hour_count(i)}}</p>
-          <div class="collapsible" :collapsed="collapsed[i]"></div>
+          <span class="spacer"></span>
+          <div v-if="collapsed[i]" class="collapsed-quarter">
+            <mini-card-vue
+              v-for="(course, j) in quarter"
+              :key="`year ${idx} quarter ${i} course ${j}`"
+              :course_id="course"
+              @load-course="$emit('load-course', $event)"
+              :year="idx"
+              :quarter="i"
+              :idx="j"
+            ></mini-card-vue>
+          </div>
         </span>
         <div
           v-if="!collapsed[i]"
@@ -38,9 +60,10 @@
 <script lang="ts">
 import Vue from "vue";
 import CardVue from "./Card.vue";
+import MiniCardVue from "./MiniCard.vue";
 import { Road } from "@/store/road";
 export default Vue.extend({
-  components: { CardVue },
+  components: { MiniCardVue, CardVue },
   props: {
     year: Array as () => string[][],
     idx: Number,
@@ -49,6 +72,13 @@ export default Vue.extend({
   },
   data() {
     return { collapsed: [false, true, false, true], full_collapse: false };
+  },
+  computed: {
+    courses(): Array<{ quarter: number; idx: number; course: string }> {
+      return this.year.flatMap((c, quarter) =>
+        c.flatMap((course, idx) => ({ quarter, idx, course }))
+      );
+    }
   },
   methods: {
     quarter_label(idx: 0 | 1 | 2 | 3) {
@@ -103,6 +133,14 @@ export default Vue.extend({
     },
     remove(year: number, quarter: number, idx: number) {
       this.$emit("remove-course", { year, quarter, idx });
+    },
+    toggle_collapse(i: number) {
+      this.collapsed.splice(i, 1, !this.collapsed[i]);
+      this.$emit("graph-redraw", { year: this.idx, quarter: i });
+    },
+    toggle_full() {
+      this.full_collapse = !this.full_collapse;
+      this.$emit("graph-redraw", { year: this.idx, quarter: 0 });
     }
   }
 });
@@ -116,24 +154,31 @@ export default Vue.extend({
 .year-header,
 .quarter-header {
   background-color: #ffffff10;
-  height: 2.5em;
+  min-height: 2.5em;
   display: flex;
   align-items: center;
   cursor: pointer;
-  position: relative;
   padding: 0.5em;
+  transition: background-color 300ms;
 }
-.collapsible {
+.year-header:hover,
+.quarter-header:hover {
+  background-color: #ffffff18;
+}
+.spacer {
+  flex-grow: 1;
+}
+.year-header::after,
+.quarter-header::after {
+  content: "";
   border-right: solid white 2px;
   border-top: solid white 2px;
   height: 0.5em;
   width: 0.5em;
   transform: rotate(135deg);
   transition: transform 300ms;
-  position: absolute;
-  right: 1em;
 }
-.collapsible[collapsed] {
+[collapsed]::after {
   transform: rotate(-45deg);
 }
 .quarter-header {
@@ -176,5 +221,14 @@ export default Vue.extend({
 }
 .quarter-header > p {
   padding: 0 10px;
+}
+.collapsed-quarter, .collapsed-year {
+  display: flex;
+  flex-flow: row wrap;
+  max-width: 50%;
+  padding: 10px;
+}
+.collapsed-year {
+    max-width: 87.5%;
 }
 </style>

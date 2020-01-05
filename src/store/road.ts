@@ -66,7 +66,10 @@ export const roads: Module<typeof road_state, any> = {
             }
         },
         _add_requirement({ course_roads, viewing }, requirement: string) {
-            course_roads[viewing][1].requirements.push(requirement);
+            const arr = course_roads[viewing][1].requirements;
+            if (!arr.includes(requirement)) {
+                arr.push(requirement);
+            }
         },
         _remove_requirement({ course_roads, viewing }, idx: number) {
             course_roads[viewing][1].requirements.splice(idx, 1);

@@ -1,9 +1,20 @@
 <template>
   <article class="prior-credit">
-    <span class="prior-credit-header">
+    <span class="prior-credit-header" :collapsed="collapse" @click="toggle_collapse">
       <b>Prior Credit</b>
       <p>{{unit_count}}</p>
-      <div class="collapsible" :collapsed="collapse"></div>
+      <span class="spacer"></span>
+      <div v-if="collapse" class="collapsed-classes">
+        <mini-card-vue
+          v-for="(course, j) in classes"
+          :key="`Prior credit: ${j}`"
+          :course_id="course"
+          @load-course="$emit('load-course', $event)"
+          :year="-1"
+          :quarter="0"
+          :idx="j"
+        ></mini-card-vue>
+      </div>
     </span>
     <div
       v-if="!collapse"
@@ -27,10 +38,11 @@
 </template>
 <script lang="ts">
 import Vue from "vue";
+import MiniCardVue from "./MiniCard.vue";
 import CardVue from "./Card.vue";
 import { CourseJSON } from "@/fireroad";
 export default Vue.extend({
-  components: { CardVue },
+  components: { MiniCardVue, CardVue },
   props: { classes: Array as () => string[], placing: String },
   data() {
     return { collapse: false };
@@ -49,6 +61,10 @@ export default Vue.extend({
   methods: {
     remove(j: number) {
       this.$emit("remove-course", { year: -1, quarter: 0, idx: j });
+    },
+    toggle_collapse() {
+        this.collapse = !this.collapse;
+        this.$emit("graph-redraw");
     }
   }
 });
@@ -56,24 +72,29 @@ export default Vue.extend({
 <style scoped>
 .prior-credit-header {
   background-color: #ffffff10;
-  height: 2.5em;
+  min-height: 2.5em;
   display: flex;
   align-items: center;
   cursor: pointer;
-  position: relative;
   padding: 0.5em;
+  transition: background-color 300ms;
 }
-.collapsible {
+.prior-credit-header:hover {
+  background-color: #ffffff18;
+}
+.spacer {
+  flex-grow: 1;
+}
+.prior-credit-header::after {
+  content: "";
   border-right: solid white 2px;
   border-top: solid white 2px;
   height: 0.5em;
   width: 0.5em;
   transform: rotate(135deg);
   transition: transform 300ms;
-  position: absolute;
-  right: 1em;
 }
-.collapsible[collapsed] {
+[collapsed]::after {
   transform: rotate(-45deg);
 }
 .prior-credit {
@@ -106,5 +127,11 @@ export default Vue.extend({
 }
 .prior-credit-header > p {
   padding: 0 10px;
+}
+.collapsed-classes {
+  display: flex;
+  flex-flow: row wrap;
+  padding: 10px;
+  max-width: 87.5%;
 }
 </style>

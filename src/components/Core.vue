@@ -57,6 +57,7 @@
             @load-course="inspect"
             @place-course="place(-1, 0)"
             @remove-course="remove_course"
+            @graph-redraw="graph_redraw"
           ></prior-credit-vue>
           <year-vue
             v-for="(year, idx) in years"
@@ -68,6 +69,7 @@
             @load-course="inspect"
             @place-course="place(idx, $event)"
             @remove-course="remove_course"
+            @graph-redraw="graph_redraw"
           ></year-vue>
         </article>
       </div>
@@ -219,20 +221,18 @@ export default Vue.extend({
       this.$store.dispatch("roads/save");
     },
     newRoad(input: any) {
+      this.graph_redraw();
       if (this.editing !== -1) {
         this.$store.dispatch("save");
       }
       this.editing = this.$store.state.roads.course_roads.length;
       this.editingText = "Untitled";
-      this.graph_detrack(-1, 0);
       this.$store.dispatch("roads/new_road", this.editingText);
-      this.$nextTick(() => this.$nextTick(() => this.graph_retrack(-1, 0)));
     },
     view(idx: number) {
       if (idx !== this.viewing) {
-        this.graph_detrack(-1, 0);
+        this.graph_redraw();
         this.$store.dispatch("roads/view", idx);
-        this.$nextTick(() => this.graph_retrack(-1, 0));
         if (this.editing !== -1) {
           this.$store.dispatch("save");
         }
@@ -258,7 +258,7 @@ export default Vue.extend({
     },
     place(idx: number, i: number) {
       if (this.inspecting) {
-        this.graph_detrack(idx, i);
+        this.graph_redraw({ year: idx, quarter: i });
         this.$store.dispatch("roads/add_course", {
           year: idx,
           quarter: i,
@@ -266,7 +266,6 @@ export default Vue.extend({
         });
         this.close_info();
         this.update_progresses();
-        this.$nextTick(() => this.graph_retrack(idx, i));
       }
     },
     remove_course({
@@ -278,10 +277,9 @@ export default Vue.extend({
       quarter: 0 | 1 | 2 | 3;
       idx: number;
     }) {
-      this.graph_detrack(year, quarter);
+      this.graph_redraw({ year, quarter });
       this.$store.dispatch("roads/remove_course", { year, quarter, idx });
       this.update_progresses();
-      this.$nextTick(() => this.graph_retrack(year, quarter));
     },
     push_course(course: string) {
       this.inspection_history.splice(
@@ -328,6 +326,15 @@ export default Vue.extend({
         title: course.title,
         units: course.total_units
       };
+    },
+    graph_redraw(
+      { year, quarter }: { year: number; quarter: number } = {
+        year: -1,
+        quarter: 0
+      }
+    ) {
+      this.graph_detrack(year, quarter);
+      this.$nextTick(() => this.graph_retrack(year, quarter));
     },
     graph_tracks(year: number, quarter: number) {
       const tracks = [] as Array<[number, number]>;
