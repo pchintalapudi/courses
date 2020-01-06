@@ -62,6 +62,7 @@ export default Vue.extend({
   font-size: 1rem;
   position: relative;
   min-width: 200px;
+  padding: 5px;
 }
 .children {
   padding-left: 2em;

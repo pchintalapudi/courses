@@ -47,7 +47,7 @@
           </span>
           <i v-if="viewing===-1">Create a new road! ---></i>
         </span>
-        <action-button-vue @click="new_road"></action-button-vue>
+        <action-button-vue @button-click="new_road"></action-button-vue>
       </nav>
       <div v-if="viewing!==-1" style="overflow:auto;">
         <article class="road-display">
