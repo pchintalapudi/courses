@@ -15,13 +15,15 @@ const remove_queue = new Set<SVGPathElement>();
 
 function do_draw() {
     const svg = document.getElementById("graph") as any as SVGSVGElement;
+    const fragment = document.createDocumentFragment();
     draw_queue.forEach(path => {
         if (!remove_queue.has(path)) {
-            svg.appendChild(path);
+            fragment.appendChild(path);
         } else {
             remove_queue.delete(path);
         }
     });
+    svg.appendChild(fragment);
     remove_queue.forEach(path => path.remove());
     draw_queue.length = 0;
     remove_queue.clear();
@@ -67,15 +69,28 @@ function get_lowest_target(course_id: string, ignore?: Element) {
     return min;
 }
 
+function control_point(start: [number, number], end: [number, number]): [number, number] {
+    return [start[0] * 7 / 8 + end[0] / 8, start[1] / 8 + end[1] * 7 / 8];
+}
+
+function fast_draw_length(x: number, y: number) {
+    return Math.sqrt((x * x + y * y) * 2);
+}
+
 function draw(from_element: HTMLElement, to_element: HTMLElement, prereq: boolean) {
     const path = document.createElementNS(xmlns, "path");
     path.classList.add(prereq ? "p-req" : "c-req");
     const start_point = [from_element.offsetLeft + from_element.offsetWidth / 2,
-    from_element.offsetTop + from_element.offsetHeight / 2];
+    from_element.offsetTop + from_element.offsetHeight / 2] as [number, number];
     const end_point = [to_element.offsetLeft + to_element.offsetWidth / 2,
-    to_element.offsetTop + to_element.offsetHeight / 2];
-    path.setAttribute("d", `M ${start_point[0]} ${start_point[1]} L ${end_point[0]} ${end_point[1]}`);
-    path.setAttribute("style", `--length:${Math.hypot(end_point[1] - start_point[1], end_point[0] - start_point[0])}`);
+    to_element.offsetTop + to_element.offsetHeight / 2] as [number, number];
+    const c_p = control_point(start_point, end_point);
+    path.setAttribute("d",
+        `M ${start_point[0]} ${start_point[1]} Q ${c_p[0]} ${c_p[1]},${end_point[0]} ${end_point[1]}`);
+    if (c_p[1] < start_point[1] ||
+        Math.abs(c_p[1] - start_point[1]) < 0.001 && prereq && !to_element.id.includes("-1")) {
+        path.setAttribute("style", "stroke:red;");
+    }
     return path;
 }
 

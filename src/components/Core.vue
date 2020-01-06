@@ -147,7 +147,8 @@ export default Vue.extend({
       inspection_history: [] as string[],
       maximize_info: false,
       graph_mode: true,
-      retracks: new Map<string, number>(),
+      cycling: new Set<string>(),
+      cycle: 0,
       progress_update: 0
     };
   },
@@ -398,41 +399,46 @@ export default Vue.extend({
     graph_detrack(year: number, quarter: number) {
       const courses = this.graph_courses(year, quarter).forEach(c => {
         const id = JSON.stringify(c);
-        const in_flight = this.retracks.get(id);
-        if (in_flight) {
-          window.clearTimeout(in_flight);
-          this.retracks.delete(id);
-        } else {
+        if (!this.cycling.delete(id)) {
           graph_untrack(c.year, c.quarter, c.idx);
         }
       });
     },
     graph_retrack(year: number, quarter: number) {
       const courses = this.graph_courses(year, quarter);
-      courses
-        .filter(c => !this.retracks.has(JSON.stringify(c)))
-        .forEach(c => this._cycle_retrack(c));
+      if (!this.cycling.size) {
+        this.cycle = window.setTimeout(() => this._cycle_retrack(), 0);
+      }
+      courses.forEach(course => this.cycling.add(JSON.stringify(course)));
     },
-    _cycle_retrack(course: {
-      year: number;
-      quarter: number;
-      idx: number;
-      course: string;
-    }) {
-      const c = this.$store.state.classes.manifest.get(course.course);
-      if (!c || !is_full_course(c)) {
-        this.retracks.set(
-          JSON.stringify(course),
-          window.setTimeout(() => this._cycle_retrack(course), 1000)
+    _cycle_retrack() {
+      const draw = [] as Array<
+        [{ year: number; quarter: number; idx: number }, FullCourseJSON, string]
+      >;
+      const MAX_DRAW_PER_FRAME = 20;
+      this.cycling.forEach(id => {
+        if (draw.length < MAX_DRAW_PER_FRAME) {
+          const course: {
+            year: number;
+            quarter: number;
+            idx: number;
+            course: string;
+          } = JSON.parse(id);
+          const c = this.$store.state.classes.manifest.get(course.course);
+          if (c && is_full_course(c)) {
+            draw.push([course, c, id]);
+          }
+        }
+      });
+      draw.forEach(tup => {
+        this.cycling.delete(tup[2]);
+        graph_track(tup[0].year, tup[0].quarter, tup[0].idx, tup[1]);
+      });
+      if (this.cycling.size) {
+        window.setTimeout(
+          () => this._cycle_retrack(),
+          draw.length === MAX_DRAW_PER_FRAME ? 0 : 500
         );
-      } else {
-        graph_track(
-          course.year,
-          course.quarter,
-          course.idx,
-          c as FullCourseJSON
-        );
-        this.retracks.delete(JSON.stringify(course));
       }
     }
   }

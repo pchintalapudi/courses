@@ -34,20 +34,11 @@ body,
   stroke-width: 2;
   fill: transparent;
   transition: stroke 150ms;
-  opacity: 0.5;
-  stroke-dasharray: var(--length);
-  stroke-dashoffset: var(--length);
+  opacity: 0.75;
   animation: draw 500ms ease-in-out 0ms 1 normal forwards;
-}
-.p-req {
   stroke: hsl(240deg, 0%, 50%);
 }
 .c-req {
-  stroke: hsl(60deg, 75%, 50%);
-}
-@keyframes draw {
-  to {
-    stroke-dashoffset: 0;
-  }
+    stroke-dasharray: 0.3%;
 }
 </style>

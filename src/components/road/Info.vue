@@ -10,7 +10,7 @@
           <div></div>
         </button>
       </h3>
-      <button @click="$emit('close-info')">&times;</button>
+      <close-button-vue @button-click="$emit('close-info')" :close="true"></close-button-vue>
     </span>
     <div class="body">
       <h4 :loading="!!course" class="title">{{course ? course.title : "Loading Course Title..."}}</h4>
@@ -67,6 +67,7 @@
 </template>
 <script lang="ts">
 import Vue from "vue";
+import CloseButtonVue from "@/components/utils/ActionButton.vue";
 import {
   CourseJSON,
   is_full_course,
@@ -76,6 +77,7 @@ import {
 import { Quarter } from "@/store/road";
 import { is_gir, requisite_parser, de_gir } from "@/fireroad/demystify";
 export default Vue.extend({
+  components: { CloseButtonVue },
   props: { id: String, idx: Number, length: Number },
   computed: {
     course(): CourseJSON | undefined {
@@ -222,12 +224,14 @@ h6 {
 }
 .head button {
   font-size: 1.5em;
+  margin: 10px;
+}
+.head > h3 > button {
   border: none;
   border-radius: 50%;
   background-color: transparent;
   height: 1.5em;
   width: 1.5em;
-  margin: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -235,11 +239,8 @@ h6 {
   color: white;
   transition: background-color 150ms;
 }
-.head button:hover {
+.head > h3 > button:hover {
   background-color: #00000022;
-}
-.head > button:active {
-  background-color: #ff000044;
 }
 .head > h3 > button:active {
   background-color: #00000044;
