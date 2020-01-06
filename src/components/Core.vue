@@ -32,7 +32,7 @@
           >
             <p class="road-title" v-if="editing!==idx">
               <b>{{name}}</b>
-              <button class="delete-road" @click.stop="remove_road(idx)">&times;</button>
+              <action-button-vue @click.stop="remove_road(idx)" :close="true"></action-button-vue>
             </p>
             <input
               type="text"
@@ -47,7 +47,7 @@
           </span>
           <i v-if="viewing===-1">Create a new road! ---></i>
         </span>
-        <button class="new-road" @click="new_road">+</button>
+        <action-button-vue @click="new_road"></action-button-vue>
       </nav>
       <div v-if="viewing!==-1" style="overflow:auto;">
         <article class="road-display">
@@ -101,6 +101,7 @@ import SearchVue from "./road/Search.vue";
 import InfoVue from "./road/Info.vue";
 import RequirementSearchVue from "./requirements/RequirementSearch.vue";
 import RequirementTreeVue from "./requirements/RequirementTree.vue";
+import ActionButtonVue from "./utils/ActionButton.vue";
 import {
   CourseJSON,
   RequirementTitles,
@@ -122,7 +123,8 @@ export default Vue.extend({
     SearchVue,
     InfoVue,
     RequirementSearchVue,
-    RequirementTreeVue
+    RequirementTreeVue,
+    ActionButtonVue
   },
   async mounted() {
     const listener = () => this.graph_redraw();
@@ -480,26 +482,13 @@ main {
   display: flex;
   justify-content: center;
   align-items: center;
+  --button-visible: 0;
+}
+.road-title:hover {
+  --button-visible: 1;
 }
 .road-title[selected] {
   background-color: #0088ff44;
-}
-.new-road {
-  font-size: 2em;
-  height: 1.5em;
-  width: 1.5em;
-  border: none;
-  cursor: pointer;
-  border-radius: 50%;
-  background-color: transparent;
-  transition: background-color, 150ms;
-  color: white;
-}
-.new-road:hover {
-  background-color: #0088ff44;
-}
-.new-road:active {
-  background-color: #0088ff88;
 }
 .road-display,
 .no-roads {
@@ -556,27 +545,5 @@ input {
   height: 100%;
   pointer-events: none;
   z-index: 0;
-}
-.delete-road {
-  opacity: 0;
-  font-size: 1.25em;
-  height: 1.5em;
-  width: 1.5em;
-  border-radius: 50%;
-  color: white;
-  background-color: transparent;
-  transition: background-color 150ms, opacity 150ms;
-  border: none;
-  margin-left: 1em;
-  cursor: pointer;
-}
-.road-title:hover > .delete-road {
-  opacity: 1;
-}
-.delete-road:hover {
-  background-color: #ffffff18;
-}
-.delete-road:active {
-  background-color: hsla(0deg, 75%, 50%, 20%);
 }
 </style>

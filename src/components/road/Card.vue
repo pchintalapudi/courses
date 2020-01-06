@@ -8,15 +8,18 @@
   >
     <h3>
       {{course_id}}
-      <button @click="$emit('remove-course')">&times;</button>
+      <close-button-vue @button-click="$emit('remove-course')" :close="true"></close-button-vue>
     </h3>
     <p>{{course ? display_name : 'Loading Course Name...'}}</p>
   </article>
 </template>
 <script lang="ts">
 import Vue from "vue";
+import CloseButtonVue from "@/components/utils/ActionButton.vue";
 import { CourseJSON, compute_color } from "@/fireroad";
+import VueRouter from "vue-router";
 export default Vue.extend({
+  components: { CloseButtonVue },
   props: { course_id: String, year: Number, quarter: Number, idx: Number },
   computed: {
     course(): CourseJSON | undefined {
@@ -61,37 +64,17 @@ export default Vue.extend({
   border-radius: 10px;
   box-shadow: 5px 5px 5px #00000044;
   margin: 12.5px 0;
+  --button-visible: 0;
 }
 .card > h3 {
   display: flex;
   flex-flow: row nowrap;
   justify-content: space-between;
 }
-button {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 300ms, background-color 150ms;
-  background-color: transparent;
-  border: none;
-  color: white;
-  font-size: 1em;
-  width: 1.5em;
-  height: 1.5em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  border-radius: 50%;
-  cursor: pointer;
+.card:hover {
+  --button-visible: 1;
 }
-.card:hover button {
-  opacity: 1;
-  pointer-events: all;
-}
-button:hover {
-  background-color: #ff000022;
-}
-button:active {
-  background-color: #ff000044;
+p {
+  margin-right: calc(1.5em + 15px);
 }
 </style>

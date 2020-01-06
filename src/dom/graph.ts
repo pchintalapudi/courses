@@ -75,28 +75,34 @@ function draw(from_element: HTMLElement, to_element: HTMLElement, prereq: boolea
     const end_point = [to_element.offsetLeft + to_element.offsetWidth / 2,
     to_element.offsetTop + to_element.offsetHeight / 2];
     path.setAttribute("d", `M ${start_point[0]} ${start_point[1]} L ${end_point[0]} ${end_point[1]}`);
-    queue_mod();
-    draw_queue.push(path);
+    path.setAttribute("style", `--length:${Math.hypot(end_point[1] - start_point[1], end_point[0] - start_point[0])}`);
     return path;
 }
 
 function update_drawn_map(from_id: string, to_id: string, path: SVGPathElement) {
     let map = drawn_lines.get(to_id);
-    if (!map) { drawn_lines.set(to_id, map = new Map()); }
-    let old = map.get(from_id);
-    if (old) {
-        queue_mod();
-        remove_queue.add(old);
+    if (!map) {
+        drawn_lines.set(to_id, new Map([[from_id, path]]));
+        map = drawn_lines.get(from_id);
+        if (!map) {
+            drawn_lines.set(from_id, new Map([[to_id, path]]));
+        } else {
+            map.set(to_id, path);
+        }
+    } else {
+        if (map.has(from_id)) {
+            return;
+        }
+        map.set(from_id, path);
+        map = drawn_lines.get(from_id);
+        if (!map) {
+            drawn_lines.set(from_id, new Map([[to_id, path]]));
+        } else {
+            map.set(to_id, path);
+        }
     }
-    map.set(from_id, path);
-    map = drawn_lines.get(from_id);
-    if (!map) { drawn_lines.set(from_id, map = new Map()); }
-    old = map.get(from_id);
-    if (old) {
-        queue_mod();
-        remove_queue.add(old);
-    }
-    map.set(to_id, path);
+    queue_mod();
+    draw_queue.push(path);
 }
 
 function connect_forwards(course_id: string, element_id: IDJSON, find_id: string, prereq: boolean) {

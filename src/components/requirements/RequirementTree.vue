@@ -11,7 +11,7 @@
         @click="collapsed=!collapsed"
         :collapsed="collapsed"
       >{{reqs.loading ? 'Loading Title...' : reqs.reqs.short_title + " " + reqs.reqs.title}}</h2>
-      <button @click="$emit('remove-requirement')">&times;</button>
+      <close-button-vue @click="$emit('remove_requirement')" :close="true"></close-button-vue>
     </div>
     <template v-if="(has_progress || has_requirement) && !collapsed">
       <requirement-vue
@@ -36,12 +36,13 @@ import {
   ProgressJSON
 } from "@/fireroad";
 import RequirementVue from "./Requirement.vue";
+import CloseButtonVue from "@/components/utils/ActionButton.vue";
 interface Requirements {
   loading: boolean;
   reqs: RequirementTitles;
 }
 export default Vue.extend({
-  components: { RequirementVue },
+  components: { RequirementVue, CloseButtonVue },
   props: {
     requirements: String
   },
@@ -126,6 +127,10 @@ h2 {
 }
 .tree {
   padding-left: 4em;
+  --button-visible: 0;
+}
+.tree:hover {
+  --button-visible: 1;
 }
 h2::before {
   content: "";
@@ -139,26 +144,5 @@ h2::before {
 }
 [collapsed]::before {
   transform: rotate(-90deg);
-}
-button {
-  border-radius: 50%;
-  min-height: 1.5em;
-  min-width: 1.5em;
-  cursor: pointer;
-  border: none;
-  background-color: transparent;
-  transition: opacity 150ms, background-color 150ms;
-  color: white;
-  opacity: 0;
-  margin: 5px;
-}
-.tree:hover button {
-  opacity: 1;
-}
-button:hover {
-  background-color: #ffffff22;
-}
-button:active {
-  background-color: #ff000044;
 }
 </style>

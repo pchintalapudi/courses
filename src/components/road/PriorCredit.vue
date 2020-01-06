@@ -77,7 +77,6 @@ export default Vue.extend({
   align-items: center;
   cursor: pointer;
   padding: 0.5em;
-  transition: background-color 300ms;
 }
 .prior-credit-header:hover {
   background-color: #ffffff18;
@@ -104,7 +103,6 @@ export default Vue.extend({
 .prior-credit-classes {
   display: flex;
   flex: 1;
-  transition: background-color 500ms;
   flex-basis: 150px;
   flex-flow: row wrap;
   align-items: center;

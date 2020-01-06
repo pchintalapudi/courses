@@ -159,7 +159,6 @@ export default Vue.extend({
   align-items: center;
   cursor: pointer;
   padding: 0.5em;
-  transition: background-color 300ms;
 }
 .year-header:hover,
 .quarter-header:hover {
@@ -192,7 +191,6 @@ export default Vue.extend({
 .quarter-classes {
   display: flex;
   flex: 1;
-  transition: background-color 500ms;
   flex-basis: 150px;
   flex-flow: row wrap;
   align-items: center;

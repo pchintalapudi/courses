@@ -23,17 +23,31 @@ body,
   background-color: #121212;
   color: hsl(0deg, 0%, 80%);
 }
-#app, #app input {
+#app,
+#app input {
   display: flex;
   font-family: "Titillium Web", sans-serif;
+  --button-visible: 1;
 }
-.p-req, .c-req {
-    stroke:#ffffff66;
-    stroke-width: 2;
-    fill: transparent;
-    transition: stroke 150ms;
+.p-req,
+.c-req {
+  stroke-width: 2;
+  fill: transparent;
+  transition: stroke 150ms;
+  opacity: 0.5;
+  stroke-dasharray: var(--length);
+  stroke-dashoffset: var(--length);
+  animation: draw 500ms ease-in-out 0ms 1 normal forwards;
+}
+.p-req {
+  stroke: hsl(240deg, 0%, 50%);
 }
 .c-req {
-    stroke-dasharray: 5 5;
+  stroke: hsl(60deg, 75%, 50%);
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 </style>
