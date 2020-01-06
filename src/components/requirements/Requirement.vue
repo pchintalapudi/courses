@@ -36,7 +36,7 @@ export default Vue.extend({
     name: String
   },
   data() {
-    return { collapsed: false };
+    return { collapsed: true };
   },
   computed: {
     is_req(): boolean {

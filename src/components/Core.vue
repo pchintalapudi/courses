@@ -47,7 +47,7 @@
           </span>
           <i v-if="viewing===-1">Create a new road! ---></i>
         </span>
-        <button class="new-road" @click="newRoad">+</button>
+        <button class="new-road" @click="new_road">+</button>
       </nav>
       <div v-if="viewing!==-1" style="overflow:auto;">
         <article class="road-display">
@@ -125,10 +125,7 @@ export default Vue.extend({
     RequirementTreeVue
   },
   async mounted() {
-    const listener = () => {
-      this.graph_detrack(-1, 0);
-      this.graph_retrack(-1, 0);
-    };
+    const listener = () => this.graph_redraw();
     window.addEventListener("resize", listener);
     this.$once("hook:beforeDestroy", () =>
       window.removeEventListener("resize", listener)
@@ -223,7 +220,7 @@ export default Vue.extend({
       this.editing = -1;
       this.$store.dispatch("roads/save");
     },
-    newRoad(input: any) {
+    new_road(input: any) {
       this.graph_redraw();
       if (this.editing !== -1) {
         this.$store.dispatch("save");
@@ -231,6 +228,10 @@ export default Vue.extend({
       this.editing = this.$store.state.roads.course_roads.length;
       this.editingText = "Untitled";
       this.$store.dispatch("roads/new_road", this.editingText);
+    },
+    remove_road(idx: number) {
+      this.graph_redraw();
+      this.$store.dispatch("roads/delete_road", idx);
     },
     view(idx: number) {
       if (idx !== this.viewing) {
@@ -338,9 +339,7 @@ export default Vue.extend({
         id,
         index: year * 4 + 1 + quarter + idx,
         overrideWarnings: false,
-        semester: year * 4 + 1 + quarter,
-        title: course.title,
-        units: course.total_units
+        semester: year * 4 + 1 + quarter
       };
     },
     graph_redraw(
@@ -352,79 +351,87 @@ export default Vue.extend({
       this.graph_detrack(year, quarter);
       this.$nextTick(() => this.graph_retrack(year, quarter));
     },
-    graph_tracks(year: number, quarter: number) {
-      const tracks = [] as Array<[number, number]>;
+    graph_courses(year: number, quarter: number) {
+      const courses = [] as Array<{
+        year: number;
+        quarter: number;
+        idx: number;
+        course: string;
+      }>;
       if (year === -1) {
-        tracks.push([-1, 0]);
+        courses.push(
+          ...this.prior_credit.map((course, idx) => ({
+            year: -1,
+            quarter: 0,
+            idx,
+            course
+          }))
+        );
       } else {
-        while (quarter < 4) {
-          tracks.push([year, quarter++]);
-        }
-      }
-      this.years
-        .slice(++year)
-        .forEach((_, y) =>
-          tracks.push(
-            [y + year, 0],
-            [y + year, 1],
-            [y + year, 2],
-            [y + year, 3]
+        courses.push(
+          ...this.years[year].slice(quarter).flatMap((c, q) =>
+            c.map((course, idx) => ({
+              year,
+              quarter: quarter + q,
+              idx,
+              course
+            }))
           )
         );
-      return tracks;
+      }
+      courses.push(
+        ...this.years.slice(++year).flatMap((yc, y) =>
+          yc.flatMap((qc, q) =>
+            qc.map((course, idx) => ({
+              year: year + y,
+              quarter: q,
+              idx,
+              course
+            }))
+          )
+        )
+      );
+      return courses;
     },
     graph_detrack(year: number, quarter: number) {
-      if (this.viewing > -1) {
-        this.graph_tracks(year, quarter).forEach(tup => {
-          const str = `${tup[0]} ${tup[1]}`;
-          window.clearTimeout(this.retracks.get(str));
-          this.retracks.set(str, 0);
-          graph_untrack(
-            tup[0],
-            tup[1],
-            tup[0] === -1 ? this.prior_credit : this.years[tup[0]][tup[1]]
-          );
-        });
-      }
+      const courses = this.graph_courses(year, quarter).forEach(c => {
+        const id = JSON.stringify(c);
+        const in_flight = this.retracks.get(id);
+        if (in_flight) {
+          window.clearTimeout(in_flight);
+          this.retracks.delete(id);
+        } else {
+          graph_untrack(c.year, c.quarter, c.idx);
+        }
+      });
     },
     graph_retrack(year: number, quarter: number) {
-      if (this.viewing > -1) {
-        this.graph_tracks(year, quarter).forEach(tup => {
-          const str = `${tup[0]} ${tup[1]}`;
-          if (!this.retracks.get(str)) {
-            this._graph_retrack(...tup);
-          }
-        });
-      }
+      const courses = this.graph_courses(year, quarter);
+      courses
+        .filter(c => !this.retracks.has(JSON.stringify(c)))
+        .forEach(c => this._cycle_retrack(c));
     },
-    _graph_retrack(year: number, quarter: number) {
-      const courses = (year === -1
-        ? this.prior_credit
-        : this.years[year][quarter]
-      ).map(course_id =>
-        this.$store.state.classes.manifest_updated
-          ? this.$store.state.classes.manifest.get(course_id)
-          : undefined
-      );
-      const fail = courses.reduce(
-        (old, next) => old || !next || !is_full_course(next),
-        false
-      );
-      const str = `${year} ${quarter}`;
-      if (fail) {
+    _cycle_retrack(course: {
+      year: number;
+      quarter: number;
+      idx: number;
+      course: string;
+    }) {
+      const c = this.$store.state.classes.manifest.get(course.course);
+      if (!c || !is_full_course(c)) {
         this.retracks.set(
-          str,
-          window.setTimeout(() => this._graph_retrack(year, quarter), 1000)
+          JSON.stringify(course),
+          window.setTimeout(() => this._cycle_retrack(course), 1000)
         );
       } else {
-        graph_track(year, quarter, courses as FullCourseJSON[]);
-        this.retracks.set(str, 0);
+        graph_track(
+          course.year,
+          course.quarter,
+          course.idx,
+          c as FullCourseJSON
+        );
+        this.retracks.delete(JSON.stringify(course));
       }
-    },
-    remove_road(idx: number) {
-      this.graph_detrack(-1, 0);
-      this.$store.dispatch("roads/delete_road", idx);
-      this.$nextTick(() => this.graph_retrack(-1, 0));
     }
   }
 });

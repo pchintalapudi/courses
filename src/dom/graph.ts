@@ -10,22 +10,33 @@ const reverse_coreqs = new Map<string, Set<string>>();
 // Doubly-mapped map of id -> id -> svg
 const drawn_lines = new Map<string, Map<string, SVGPathElement>>();
 
-let app = undefined as undefined | HTMLElement;
+const draw_queue = [] as SVGPathElement[];
+const remove_queue = new Set<SVGPathElement>();
 
-export function graph_remove_all() {
-    const set = new Set<SVGPathElement>(Array.from(drawn_lines.values()).flatMap(m => Array.from(m.values())));
-    set.forEach(path => path.remove());
-    drawn_lines.clear();
+function do_draw() {
+    const svg = document.getElementById("graph") as any as SVGSVGElement;
+    draw_queue.forEach(path => {
+        if (!remove_queue.has(path)) {
+            svg.appendChild(path);
+        } else {
+            remove_queue.delete(path);
+        }
+    });
+    remove_queue.forEach(path => path.remove());
+    draw_queue.length = 0;
+    remove_queue.clear();
 }
 
-export function graph_init() {
-    app = document.getElementById("app")!;
+function queue_mod() {
+    if (!draw_queue.length && !remove_queue.size) {
+        window.requestAnimationFrame(() => do_draw());
+    }
 }
 
 function get_all_targets(course_id: string) {
     return is_gir(course_id) ?
-        de_gir(course_id).flatMap(r => Array.from(app!.getElementsByClassName(r))) :
-        Array.from(app!.getElementsByClassName(course_id));
+        de_gir(course_id).flatMap(r => Array.from(document.getElementsByClassName(r))) :
+        Array.from(document.getElementsByClassName(course_id));
 }
 
 interface IDJSON {
@@ -64,6 +75,8 @@ function draw(from_element: HTMLElement, to_element: HTMLElement, prereq: boolea
     const end_point = [to_element.offsetLeft + to_element.offsetWidth / 2,
     to_element.offsetTop + to_element.offsetHeight / 2];
     path.setAttribute("d", `M ${start_point[0]} ${start_point[1]} L ${end_point[0]} ${end_point[1]}`);
+    queue_mod();
+    draw_queue.push(path);
     return path;
 }
 
@@ -71,22 +84,27 @@ function update_drawn_map(from_id: string, to_id: string, path: SVGPathElement) 
     let map = drawn_lines.get(to_id);
     if (!map) { drawn_lines.set(to_id, map = new Map()); }
     let old = map.get(from_id);
-    if (old) { old.remove(); }
+    if (old) {
+        queue_mod();
+        remove_queue.add(old);
+    }
     map.set(from_id, path);
     map = drawn_lines.get(from_id);
     if (!map) { drawn_lines.set(from_id, map = new Map()); }
     old = map.get(from_id);
-    if (old) { old.remove(); }
+    if (old) {
+        queue_mod();
+        remove_queue.add(old);
+    }
     map.set(to_id, path);
 }
 
-function connect_forwards(course_id: string, element_id: IDJSON, find_id: string, svg: SVGSVGElement, prereq: boolean) {
+function connect_forwards(course_id: string, element_id: IDJSON, find_id: string, prereq: boolean) {
     const from_element = get_lowest_target(find_id);
     if (from_element) {
         const str_id = JSON.stringify(element_id);
         const to_element = document.getElementById(str_id)!;
         const path = draw(from_element as HTMLElement, to_element, prereq);
-        svg.appendChild(path);
         update_drawn_map(from_element.id, str_id, path);
         const rmap = prereq ? reverse_prereqs : reverse_coreqs;
         const finds = is_gir(find_id) ? de_gir(find_id) : [find_id];
@@ -99,57 +117,46 @@ function connect_forwards(course_id: string, element_id: IDJSON, find_id: string
     }
 }
 
-function connect_backwards(course_id: string, element_id: IDJSON, svg: SVGSVGElement, prereq: boolean) {
+function connect_backwards(course_id: string, element_id: IDJSON, prereq: boolean) {
     const str_id = JSON.stringify(element_id);
     const from_element = document.getElementById(str_id)!;
     const old_from_element = get_lowest_target(course_id, from_element);
     if (old_from_element) {
-        const map = drawn_lines.get(old_from_element.id);
-        if (map) {
-            map.forEach((path, other_id) => {
-                path.remove();
-                drawn_lines.get(other_id)!.delete(old_from_element.id);
-            });
-            drawn_lines.delete(old_from_element.id);
-        }
+        do_untrack(old_from_element.id);
     }
     Array.from((prereq ? reverse_prereqs : reverse_coreqs).get(course_id) || [])
-        .flatMap(find_id => get_all_targets(find_id) as HTMLElement[]).forEach(to_element => {
-            const path = draw(from_element, to_element, prereq);
-            svg.appendChild(path);
-            update_drawn_map(str_id, to_element.id, path);
+        .flatMap(find_id => get_all_targets(find_id) as HTMLElement[]).forEach(to_element =>
+            update_drawn_map(str_id, to_element.id, draw(from_element, to_element, prereq))
+        );
+}
+
+export function graph_track(year: number, quarter: number, idx: number, c: FullCourseJSON) {
+    const json = { year, quarter, idx };
+    if (c.prerequisites) {
+        requisite_parser(c.prerequisites)
+            .forEach(req => connect_forwards(c.subject_id, json, req, true));
+    }
+    if (c.corequisites) {
+        requisite_parser(c.corequisites)
+            .forEach(req => connect_forwards(c.subject_id, json, req, false));
+    }
+    connect_backwards(c.subject_id, json, true);
+    connect_backwards(c.subject_id, json, false);
+}
+
+export function graph_untrack(year: number, quarter: number, idx: number) {
+    const id = JSON.stringify({ year, quarter, idx });
+    do_untrack(id);
+}
+
+function do_untrack(id: string) {
+    const map = drawn_lines.get(id);
+    if (map) {
+        map.forEach((path, other_id) => {
+            queue_mod();
+            remove_queue.add(path);
+            drawn_lines.get(other_id)!.delete(id);
         });
-}
-
-export function graph_track(year: number, quarter: number, classes: FullCourseJSON[]) {
-    graph_init();
-    const svg = document.getElementById("graph") as any as SVGSVGElement;
-    const json = { year, quarter, idx: 0 };
-    classes.forEach(c => {
-        if (c.prerequisites) {
-            requisite_parser(c.prerequisites)
-                .forEach(req => connect_forwards(c.subject_id, json, req, svg, true));
-        }
-        if (c.corequisites) {
-            requisite_parser(c.corequisites)
-                .forEach(req => connect_forwards(c.subject_id, json, req, svg, false));
-        }
-        connect_backwards(c.subject_id, json, svg, true);
-        connect_backwards(c.subject_id, json, svg, false);
-        json.idx++;
-    });
-}
-
-export function graph_untrack(year: number, quarter: number, classes: string[]) {
-    classes.forEach((c, idx) => {
-        const id = JSON.stringify({ year, quarter, idx });
-        const map = drawn_lines.get(id);
-        if (map) {
-            map.forEach((path, other_id) => {
-                path.remove();
-                drawn_lines.get(other_id)!.delete(id);
-            });
-            drawn_lines.delete(id);
-        }
-    });
+        drawn_lines.delete(id);
+    }
 }

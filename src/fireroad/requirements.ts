@@ -32,8 +32,6 @@ export interface Class {
     index: number;
     overrideWarnings: boolean;
     semester: number;
-    title: string;
-    units: number;
 }
 
 export interface RoadJSON {
