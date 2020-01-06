@@ -11,7 +11,7 @@
         @click="collapsed=!collapsed"
         :collapsed="collapsed"
       >{{reqs.loading ? 'Loading Title...' : reqs.reqs.short_title + " " + reqs.reqs.title}}</h2>
-      <close-button-vue @click="$emit('remove_requirement')" :close="true"></close-button-vue>
+      <close-button-vue @button-click="$emit('remove-requirement')" :close="true"></close-button-vue>
     </div>
     <template v-if="(has_progress || has_requirement) && !collapsed">
       <requirement-vue

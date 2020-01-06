@@ -41,6 +41,7 @@
             v-for="prereq in prerequisites"
             :key="prereq"
             :style="`--bg-color:${computeColor(prereq)}`"
+            :title="title(prereq, false)"
             @click="navigate(prereq)"
           >
             <h6>{{prereq}}</h6>
@@ -163,12 +164,14 @@ export default Vue.extend({
         .replace(/, /g, " and ")
         .replace(/\//g, " or ");
     },
-    title(id: string): string {
+    title(id: string, truncate = true): string {
       return !this.$store.state.classes.manifest_updated
         ? "Loading Course Title..."
         : is_gir(id)
         ? ""
-        : this.truncate_name(this.$store.state.classes.manifest.get(id)!.title);
+        : truncate
+        ? this.truncate_name(this.$store.state.classes.manifest.get(id)!.title)
+        : this.$store.state.classes.manifest.get(id)!.title;
     },
     truncate_name(name: string, chars = 20): string {
       if (name.length < chars) {

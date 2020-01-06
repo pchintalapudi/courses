@@ -54,10 +54,10 @@ export const roads: Module<typeof road_state, any> = {
             const arr = year === -1 ? course_roads[viewing][1].prior_credit
                 : course_roads[viewing][1].years[year][quarter];
             const cmp_nums = [parseInt(course, 10) || Number.POSITIVE_INFINITY,
-            parseInt(course.substring(course.indexOf(".")), 10) || Number.POSITIVE_INFINITY];
+            parseInt(course.substring(course.indexOf(".") + 1), 10) || Number.POSITIVE_INFINITY];
             for (let i = 0; i < arr.length; i++) {
                 const next = [parseInt(arr[i], 10) || Number.POSITIVE_INFINITY,
-                parseInt(arr[i].substring(arr[i].indexOf(".")), 10) || Number.POSITIVE_INFINITY];
+                parseInt(arr[i].substring(arr[i].indexOf(".") + 1), 10) || Number.POSITIVE_INFINITY];
                 if (cmp_nums[0] < next[0] || cmp_nums[0] === next[0] && cmp_nums[1] < next[1]) {
                     arr.splice(i, 0, course);
                     return;
