@@ -74,7 +74,4 @@ export default Vue.extend({
 .card:hover {
   --button-visible: 1;
 }
-p {
-  margin-right: calc(1.5em + 15px);
-}
 </style>

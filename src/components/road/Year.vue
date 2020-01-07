@@ -220,13 +220,14 @@ export default Vue.extend({
 .quarter-header > p {
   padding: 0 10px;
 }
-.collapsed-quarter, .collapsed-year {
+.collapsed-quarter,
+.collapsed-year {
   display: flex;
   flex-flow: row wrap;
-  max-width: 50%;
+  max-width: 62.5%;
   padding: 10px;
 }
 .collapsed-year {
-    max-width: 87.5%;
+  max-width: 87.5%;
 }
 </style>

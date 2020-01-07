@@ -94,8 +94,11 @@ export class RequirementsRequester {
                 const builder = URLBuilder.path("requirements").path("get_json");
                 if ((await offline_last_requirement_update()).getTime() < Date.now() - 8.64e+7) {
                     Promise.all(titles.map(t => window.fetch(builder.clone().path(t.list_id).build())))
-                        .then(async r => offline_update_all_requirements(await Promise.all(r.map(async resp => resp.ok ?
-                            snake_on_a_kebab(await resp.json()) : undefined).filter(resp => resp !== undefined))));
+                        .then(async r => offline_update_all_requirements(await Promise.all(
+                            r.map(async (resp, idx) => resp.ok ? snake_on_a_kebab({
+                                ...await resp.json(),
+                                list_id: titles[idx].list_id
+                            }) : undefined).filter(resp => resp !== undefined))));
                 }
                 return titles;
             }

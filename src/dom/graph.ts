@@ -73,10 +73,6 @@ function control_point(start: [number, number], end: [number, number]): [number,
     return [start[0] * 7 / 8 + end[0] / 8, start[1] / 8 + end[1] * 7 / 8];
 }
 
-function fast_draw_length(x: number, y: number) {
-    return Math.sqrt((x * x + y * y) * 2);
-}
-
 function draw(from_element: HTMLElement, to_element: HTMLElement, prereq: boolean) {
     const path = document.createElementNS(xmlns, "path");
     path.classList.add(prereq ? "p-req" : "c-req");
@@ -87,8 +83,10 @@ function draw(from_element: HTMLElement, to_element: HTMLElement, prereq: boolea
     const c_p = control_point(start_point, end_point);
     path.setAttribute("d",
         `M ${start_point[0]} ${start_point[1]} Q ${c_p[0]} ${c_p[1]},${end_point[0]} ${end_point[1]}`);
-    if (c_p[1] < start_point[1] ||
-        Math.abs(c_p[1] - start_point[1]) < 0.001 && prereq && !to_element.id.includes("-1")) {
+    const from = JSON.parse(from_element.id) as IDJSON;
+    const to = JSON.parse(to_element.id) as IDJSON;
+    if (prereq && (from.year > to.year || from.year === to.year && from.quarter >= to.quarter) && to.year !== -1
+        || !prereq && (from.year > to.year || from.year === to.year && from.quarter > to.quarter)) {
         path.setAttribute("style", "stroke:red;");
     }
     return path;

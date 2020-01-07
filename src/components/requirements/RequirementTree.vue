@@ -124,6 +124,7 @@ h2 {
   margin-left: -2em;
   position: relative;
   flex: 1;
+  padding: 5px;
 }
 .tree {
   padding-left: 4em;

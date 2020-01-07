@@ -78,19 +78,21 @@
         <i>Let's get started!</i>
       </article>
     </section>
-    <info-vue
-      v-if="inspecting"
-      class="info"
-      :id="inspecting"
-      :max="maximize_info"
-      :idx="inspect_index"
-      :length="inspection_history.length"
-      @close-info="inspecting=''"
-      @toggle-max="toggle_max"
-      @push-course="push_course"
-      @next-course="next_course"
-      @prev-course="prev_course"
-    ></info-vue>
+    <transition name="fade">
+      <info-vue
+        v-if="inspecting"
+        class="info"
+        :id="inspecting"
+        :max="maximize_info"
+        :idx="inspect_index"
+        :length="inspection_history.length"
+        @close-info="inspecting=''"
+        @toggle-max="toggle_max"
+        @push-course="push_course"
+        @next-course="next_course"
+        @prev-course="prev_course"
+      ></info-vue>
+    </transition>
   </main>
 </template>
 <script lang="ts">
@@ -133,11 +135,39 @@ export default Vue.extend({
       window.removeEventListener("resize", listener)
     );
     await this.$store.dispatch("roads/load");
-    this.courses.forEach(course =>
-      this.$store.dispatch("classes/load", course)
-    );
+    this.load_classes();
     this.update_progresses();
     listener();
+    const undo = (ev: KeyboardEvent) => {
+      if (
+        ev.key === "z" &&
+        ev.ctrlKey &&
+        !ev.altKey &&
+        !ev.shiftKey &&
+        !ev.metaKey
+      ) {
+        this.$store.dispatch("roads/undo");
+      }
+    };
+    const redo = (ev: KeyboardEvent) => {
+      if (
+        (((ev.key === "Z" || ev.key === "z") && ev.shiftKey) ||
+          (ev.key === "y" && !ev.shiftKey)) &&
+        ev.ctrlKey &&
+        !ev.altKey &&
+        !ev.metaKey
+      ) {
+        this.$store.dispatch("roads/redo");
+      }
+    };
+    window.addEventListener("keydown", undo);
+    window.addEventListener("keydown", redo);
+    this.$once("hook:beforeDestroy", () =>
+      window.removeEventListener("keydown", undo)
+    );
+    this.$once("hook:beforeDestroy", () =>
+      window.removeEventListener("keydown", redo)
+    );
   },
   data() {
     return {
@@ -244,6 +274,8 @@ export default Vue.extend({
           this.$store.dispatch("save");
         }
         this.editing = -1;
+        this.load_classes();
+        this.update_progresses();
       }
     },
     edit(idx: number) {
@@ -332,6 +364,11 @@ export default Vue.extend({
           this.progress_update = 0;
         }
       }
+    },
+    load_classes() {
+      this.courses.forEach(course =>
+        this.$store.dispatch("classes/load", course)
+      );
     },
     tracker(req: string): number {
       return this.$store.state.requirements.manifest.get(req)!.tracker;
@@ -445,6 +482,13 @@ export default Vue.extend({
 });
 </script>
 <style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
+}
 main {
   display: flex;
   flex-flow: row nowrap;
@@ -486,9 +530,10 @@ main {
   flex-shrink: 0;
   overflow: hidden;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   --button-visible: 0;
+  padding: 5px;
 }
 .road-title:hover {
   --button-visible: 1;
