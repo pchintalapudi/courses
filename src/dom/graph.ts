@@ -69,20 +69,27 @@ function get_lowest_target(course_id: string, ignore?: Element) {
     return min;
 }
 
+const WEIGHTAGE = 32;
+
 function control_point(start: [number, number], end: [number, number]): [number, number] {
-    return [start[0] * 7 / 8 + end[0] / 8, start[1] / 8 + end[1] * 7 / 8];
+    return [start[0] * (WEIGHTAGE - 1) / WEIGHTAGE + end[0] / (WEIGHTAGE),
+    start[1] / WEIGHTAGE + end[1] * (WEIGHTAGE - 1) / WEIGHTAGE];
 }
 
-function draw(from_element: HTMLElement, to_element: HTMLElement, prereq: boolean) {
+function draw(from_element: HTMLElement, to_element: HTMLElement, prereq: boolean, curvy: boolean) {
     const path = document.createElementNS(xmlns, "path");
     path.classList.add(prereq ? "p-req" : "c-req");
     const start_point = [from_element.offsetLeft + from_element.offsetWidth / 2,
     from_element.offsetTop + from_element.offsetHeight / 2] as [number, number];
     const end_point = [to_element.offsetLeft + to_element.offsetWidth / 2,
     to_element.offsetTop + to_element.offsetHeight / 2] as [number, number];
-    const c_p = control_point(start_point, end_point);
-    path.setAttribute("d",
-        `M ${start_point[0]} ${start_point[1]} Q ${c_p[0]} ${c_p[1]},${end_point[0]} ${end_point[1]}`);
+    if (curvy) {
+        const c_p = control_point(start_point, end_point);
+        path.setAttribute("d",
+            `M ${start_point[0]} ${start_point[1]} Q ${c_p[0]} ${c_p[1]},${end_point[0]} ${end_point[1]}`);
+    } else {
+        path.setAttribute("d", `M ${start_point[0]} ${start_point[1]} L ${end_point[0]} ${end_point[1]}`);
+    }
     const from = JSON.parse(from_element.id) as IDJSON;
     const to = JSON.parse(to_element.id) as IDJSON;
     if (prereq && (from.year > to.year || from.year === to.year && from.quarter >= to.quarter) && to.year !== -1
@@ -118,12 +125,12 @@ function update_drawn_map(from_id: string, to_id: string, path: SVGPathElement) 
     draw_queue.push(path);
 }
 
-function connect_forwards(course_id: string, element_id: IDJSON, find_id: string, prereq: boolean) {
+function connect_forwards(course_id: string, element_id: IDJSON, find_id: string, prereq: boolean, curvy: boolean) {
     const from_element = get_lowest_target(find_id);
     if (from_element) {
         const str_id = JSON.stringify(element_id);
         const to_element = document.getElementById(str_id)!;
-        const path = draw(from_element as HTMLElement, to_element, prereq);
+        const path = draw(from_element as HTMLElement, to_element, prereq, curvy);
         update_drawn_map(from_element.id, str_id, path);
         const rmap = prereq ? reverse_prereqs : reverse_coreqs;
         const finds = is_gir(find_id) ? de_gir(find_id) : [find_id];
@@ -136,7 +143,7 @@ function connect_forwards(course_id: string, element_id: IDJSON, find_id: string
     }
 }
 
-function connect_backwards(course_id: string, element_id: IDJSON, prereq: boolean) {
+function connect_backwards(course_id: string, element_id: IDJSON, prereq: boolean, curvy: boolean) {
     const str_id = JSON.stringify(element_id);
     const from_element = document.getElementById(str_id)!;
     const old_from_element = get_lowest_target(course_id, from_element);
@@ -145,22 +152,22 @@ function connect_backwards(course_id: string, element_id: IDJSON, prereq: boolea
     }
     Array.from((prereq ? reverse_prereqs : reverse_coreqs).get(course_id) || [])
         .flatMap(find_id => get_all_targets(find_id) as HTMLElement[]).forEach(to_element =>
-            update_drawn_map(str_id, to_element.id, draw(from_element, to_element, prereq))
+            update_drawn_map(str_id, to_element.id, draw(from_element, to_element, prereq, curvy))
         );
 }
 
-export function graph_track(year: number, quarter: number, idx: number, c: FullCourseJSON) {
+export function graph_track(year: number, quarter: number, idx: number, c: FullCourseJSON, curvy: boolean) {
     const json = { year, quarter, idx };
     if (c.prerequisites) {
         requisite_parser(c.prerequisites)
-            .forEach(req => connect_forwards(c.subject_id, json, req, true));
+            .forEach(req => connect_forwards(c.subject_id, json, req, true, curvy));
     }
     if (c.corequisites) {
         requisite_parser(c.corequisites)
-            .forEach(req => connect_forwards(c.subject_id, json, req, false));
+            .forEach(req => connect_forwards(c.subject_id, json, req, false, curvy));
     }
-    connect_backwards(c.subject_id, json, true);
-    connect_backwards(c.subject_id, json, false);
+    connect_backwards(c.subject_id, json, true, curvy);
+    connect_backwards(c.subject_id, json, false, curvy);
 }
 
 export function graph_untrack(year: number, quarter: number, idx: number) {

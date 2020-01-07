@@ -17,7 +17,9 @@
     <div class="gutter"></div>
     <section>
       <span class="header">
-        <span class="auth">TODO Auth Stuff</span>
+        <span class="toggles">
+          <button class="toggle" @click="toggle_curvy" :on="curvy">Fancy Graph</button>
+        </span>
         <search-vue class="search" @load-course="inspect"></search-vue>
       </span>
       <nav class="roads">
@@ -179,7 +181,8 @@ export default Vue.extend({
       graph_mode: true,
       cycling: new Set<string>(),
       cycle: 0,
-      progress_update: 0
+      progress_update: 0,
+      curvy: true
     };
   },
   watch: {
@@ -469,7 +472,13 @@ export default Vue.extend({
       });
       draw.forEach(tup => {
         this.cycling.delete(tup[2]);
-        graph_track(tup[0].year, tup[0].quarter, tup[0].idx, tup[1]);
+        graph_track(
+          tup[0].year,
+          tup[0].quarter,
+          tup[0].idx,
+          tup[1],
+          this.curvy
+        );
       });
       if (this.cycling.size) {
         window.setTimeout(
@@ -477,6 +486,10 @@ export default Vue.extend({
           draw.length === MAX_DRAW_PER_FRAME ? 0 : 500
         );
       }
+    },
+    toggle_curvy() {
+      this.curvy = !this.curvy;
+      this.graph_redraw();
     }
   }
 });
@@ -560,8 +573,27 @@ i {
   align-items: center;
   padding: 10px;
 }
-.auth {
+.toggles {
   flex: 1;
+}
+.toggle {
+  border: none;
+  background-color: transparent;
+  transition: background-color 300ms;
+  color: #ffffff88;
+  padding: 5px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.toggle[on] {
+    color:white;
+  background-color: #0088ff22;
+}
+.toggle:hover {
+  background-color: #0088ff44;
+}
+.toggle:active {
+  background-color: #0088ff88;
 }
 input {
   border: solid #ffffff18 1px;

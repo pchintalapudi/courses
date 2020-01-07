@@ -140,10 +140,14 @@ export const roads: Module<typeof road_state, any> = {
             });
             dispatch("save");
         },
-        view({ state, commit }, idx: number) {
+        view({ state, commit, dispatch }, idx: number) {
             const prior = state.viewing;
             commit("_view", idx);
-            commit("_log", { undo: () => commit("_view", prior), redo: () => commit("_view", idx) });
+            commit("_log", {
+                undo: () => { commit("_view", prior); dispatch("save"); },
+                redo: () => { commit("_view", idx); dispatch("save"); }
+            });
+            dispatch("save");
         },
         update_name({ state, commit, dispatch }, pack: { road: number, name: string }) {
             const old_name = state.course_roads[pack.road][0];
