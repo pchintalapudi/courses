@@ -34,7 +34,7 @@ export const roads: Module<typeof road_state, any> = {
             state.course_roads.splice(idx, 0, [name, road]);
         },
         _view(state, road: number) {
-            state.viewing = road;
+            state.viewing = Math.max(Math.min(road, state.course_roads.length - 1), state.course_roads.length ? 0 : -1);
         },
         _update_name({ course_roads }, { road, name }: { road: number, name: string }) {
             course_roads[road].splice(0, 1, name);
@@ -125,7 +125,7 @@ export const roads: Module<typeof road_state, any> = {
             }
         },
         _redo(state) {
-            if (state.idx < state.undo_stack.length) {
+            if (state.idx < state.undo_stack.length - 1) {
                 state.undo_stack[++state.idx].redo();
             }
         }

@@ -34,7 +34,7 @@
           >
             <p class="road-title" v-if="editing!==idx">
               <b>{{name}}</b>
-              <action-button-vue @click.stop="remove_road(idx)" :close="true"></action-button-vue>
+              <action-button-vue @button-click="remove_road(idx)" :close="true"></action-button-vue>
             </p>
             <input
               type="text"
@@ -149,6 +149,7 @@ export default Vue.extend({
         !ev.metaKey
       ) {
         this.$store.dispatch("roads/undo");
+        this.graph_redraw();
       }
     };
     const redo = (ev: KeyboardEvent) => {
@@ -160,6 +161,7 @@ export default Vue.extend({
         !ev.metaKey
       ) {
         this.$store.dispatch("roads/redo");
+        this.graph_redraw();
       }
     };
     window.addEventListener("keydown", undo);
@@ -259,7 +261,7 @@ export default Vue.extend({
     new_road(input: any) {
       this.graph_redraw();
       if (this.editing !== -1) {
-        this.$store.dispatch("save");
+        this.$store.dispatch("roads/save");
       }
       this.editing = this.$store.state.roads.course_roads.length;
       this.editingText = "Untitled";
@@ -274,7 +276,7 @@ export default Vue.extend({
         this.graph_redraw();
         this.$store.dispatch("roads/view", idx);
         if (this.editing !== -1) {
-          this.$store.dispatch("save");
+          this.$store.dispatch("roads/save");
         }
         this.editing = -1;
         this.load_classes();

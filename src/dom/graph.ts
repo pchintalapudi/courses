@@ -69,7 +69,7 @@ function get_lowest_target(course_id: string, ignore?: Element) {
     return min;
 }
 
-const WEIGHTAGE = 32;
+const WEIGHTAGE = 4;
 
 function control_point(start: [number, number], end: [number, number]): [number, number] {
     return [start[0] * (WEIGHTAGE - 1) / WEIGHTAGE + end[0] / (WEIGHTAGE),
