@@ -112,28 +112,28 @@ export const roads: Module<typeof road_state, any> = {
         },
         _load(state, new_state: typeof state) {
             state.course_roads = new_state.course_roads;
-            state.course_roads.map(arr => arr[1]).forEach(road => {
-                if (!road.unsat) {
-                    road.unsat = [make_year(), make_year(), make_year(), make_year()];
-                    for (let i = 0; i < road.years.length; i++) {
-                        for (let j = 0; j < road.years[i].length; j++) {
-                            for (const _ of road.years[i][j]) {
-                                road.unsat[i][j].push("");
-                            }
-                        }
-                    }
-                }
-                if (!road.force_sat) {
-                    road.force_sat = [make_year(), make_year(), make_year(), make_year()];
-                    for (let i = 0; i < road.years.length; i++) {
-                        for (let j = 0; j < road.years[i].length; j++) {
-                            for (const _ of road.years[i][j]) {
-                                road.force_sat[i][j].push(false);
-                            }
-                        }
-                    }
-                }
-            });
+            // state.course_roads.map(arr => arr[1]).forEach(road => {
+            //     if (!road.unsat) {
+            //         road.unsat = [make_year(), make_year(), make_year(), make_year()];
+            //         for (let i = 0; i < road.years.length; i++) {
+            //             for (let j = 0; j < road.years[i].length; j++) {
+            //                 for (const _ of road.years[i][j]) {
+            //                     road.unsat[i][j].push("");
+            //                 }
+            //             }
+            //         }
+            //     }
+            //     if (!road.force_sat) {
+            //         road.force_sat = [make_year(), make_year(), make_year(), make_year()];
+            //         for (let i = 0; i < road.years.length; i++) {
+            //             for (let j = 0; j < road.years[i].length; j++) {
+            //                 for (const _ of road.years[i][j]) {
+            //                     road.force_sat[i][j].push(false);
+            //                 }
+            //             }
+            //         }
+            //     }
+            // });
             state.viewing = new_state.viewing;
         },
         _set_stack(state, new_stack: typeof state.undo_stack) {

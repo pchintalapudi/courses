@@ -105,7 +105,7 @@ export default Vue.extend({
   --button-visible: 1;
 }
 [unsat] {
-  box-shadow: 5px 5px 5px #00000044, 0px 0px 5px 5px #ff0000;
+  box-shadow: 5px 5px 5px #00000044, 0px 0px 5px 10px #ff0000;
 }
 .unsat {
   position: absolute;
