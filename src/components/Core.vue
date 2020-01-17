@@ -73,6 +73,7 @@
             @place-course="place(idx, $event)"
             @remove-course="remove_course"
             @graph-redraw="graph_redraw"
+            @force-sat="toggle_sat($event)"
           ></year-vue>
         </article>
       </div>
@@ -116,6 +117,7 @@ import {
 } from "@/fireroad";
 import { Quarter } from "@/store/road";
 import { graph_untrack, graph_track } from "@/dom/graph";
+import { properRequisiteParse } from "../fireroad/demystify";
 export default Vue.extend({
   created() {
     this.$store.dispatch("classes/init");
@@ -131,15 +133,16 @@ export default Vue.extend({
     ActionButtonVue
   },
   async mounted() {
-    const listener = () => this.graph_redraw();
-    window.addEventListener("resize", listener);
+    const redrawer = () => this.graph_redraw();
+    window.addEventListener("resize", redrawer);
     this.$once("hook:beforeDestroy", () =>
-      window.removeEventListener("resize", listener)
+      window.removeEventListener("resize", redrawer)
     );
     await this.$store.dispatch("roads/load");
     this.load_classes();
     this.update_progresses();
-    listener();
+    this.compute_sat();
+    redrawer();
     const undo = (ev: KeyboardEvent) => {
       if (
         ev.key === "z" &&
@@ -184,7 +187,8 @@ export default Vue.extend({
       cycling: new Set<string>(),
       cycle: 0,
       progress_update: 0,
-      curvy: true
+      curvy: true,
+      sat_update: 0
     };
   },
   watch: {
@@ -266,10 +270,12 @@ export default Vue.extend({
       this.editing = this.$store.state.roads.course_roads.length;
       this.editingText = "Untitled";
       this.$store.dispatch("roads/new_road", this.editingText);
+      this.compute_sat();
     },
     remove_road(idx: number) {
       this.graph_redraw();
       this.$store.dispatch("roads/delete_road", idx);
+      this.compute_sat();
     },
     view(idx: number) {
       if (idx !== this.viewing) {
@@ -281,6 +287,7 @@ export default Vue.extend({
         this.editing = -1;
         this.load_classes();
         this.update_progresses();
+        this.compute_sat();
       }
     },
     edit(idx: number) {
@@ -310,6 +317,7 @@ export default Vue.extend({
         });
         this.close_info();
         this.update_progresses();
+        this.compute_sat();
       }
     },
     remove_course({
@@ -324,6 +332,7 @@ export default Vue.extend({
       this.graph_redraw({ year, quarter });
       this.$store.dispatch("roads/remove_course", { year, quarter, idx });
       this.update_progresses();
+      this.compute_sat();
     },
     push_course(course: string) {
       this.inspection_history.splice(
@@ -492,6 +501,88 @@ export default Vue.extend({
     toggle_curvy() {
       this.curvy = !this.curvy;
       this.graph_redraw();
+    },
+    compute_sat() {
+      if (!this.sat_update) {
+        this.sat_update = window.setTimeout(() => this._sat_recompute(), 0);
+      }
+    },
+    _sat_recompute() {
+      const course_set = new Set<string>();
+      for (const course of this.prior_credit) {
+        course_set.add(course);
+        const full_course = this.$store.state.classes.manifest.get(
+          course
+        ) as FullCourseJSON;
+        if (!full_course || !is_full_course(full_course)) {
+          this.sat_update = window.setTimeout(
+            () => this._sat_recompute(),
+            1000
+          );
+          return;
+        }
+        if (full_course.equivalent_subjects) {
+          full_course.equivalent_subjects.forEach(c => course_set.add(c));
+        }
+        if (full_course.joint_subjects) {
+          full_course.joint_subjects.forEach(c => course_set.add(c));
+        }
+      }
+      for (let i = 0; i < this.years.length; i++) {
+        for (let j = 0; j < this.years[i].length; j++) {
+          const unsat = [] as string[];
+          for (const course of this.years[i][j]) {
+            const full_course = this.$store.state.classes.manifest.get(
+              course
+            ) as FullCourseJSON;
+            if (!full_course || !is_full_course(full_course)) {
+              this.sat_update = window.setTimeout(
+                () => this._sat_recompute(),
+                1000
+              );
+              return;
+            }
+            if (full_course.prerequisites) {
+              const fail_prereqs = properRequisiteParse(
+                full_course.prerequisites
+              ).unsatisfied(course_set);
+              unsat.push(fail_prereqs && `Prerequisites: ${fail_prereqs}`);
+            } else {
+              unsat.push("");
+            }
+          }
+          for (const course of this.years[i][j]) {
+            course_set.add(course);
+          }
+          for (let k = 0; k < this.years[i][j].length; k++) {
+            const full_course = this.$store.state.classes.manifest.get(
+              this.years[i][j][k]
+            ) as FullCourseJSON;
+            if (full_course.corequisites) {
+              const fail_coreq = properRequisiteParse(
+                full_course.corequisites
+              ).unsatisfied(course_set);
+              unsat[k] = unsat[k]
+                ? fail_coreq
+                  ? `${unsat[k]}\nCorequisites:${fail_coreq}`
+                  : unsat[k]
+                : fail_coreq;
+            }
+          }
+          this.$store.dispatch("roads/update_unsat", {
+            year: i,
+            quarter: j,
+            unsat
+          });
+        }
+      }
+      this.sat_update = 0;
+    },
+    toggle_sat(pack: { year: number; quarter: number; idx: number }) {
+      (pack as any).force = !this.$store.state.roads.course_roads[
+        this.$store.state.roads.viewing
+      ][1].force_sat[pack.year][pack.quarter][pack.idx];
+      this.$store.dispatch("roads/force_sat", pack);
     }
   }
 });
@@ -588,7 +679,7 @@ i {
   cursor: pointer;
 }
 .toggle[on] {
-    color:white;
+  color: white;
   background-color: #0088ff22;
 }
 .toggle:hover {

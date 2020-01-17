@@ -2,15 +2,17 @@ import { Module } from 'vuex';
 
 export enum Quarter { FALL, IAP, SPRING, SUMMER }
 
-function make_year(): string[][] {
+function make_year(): never[][] {
     return [[], [], [], []];
 }
 
 // tslint:disable-next-line: max-classes-per-file
 export class Road {
-    public years = [make_year(), make_year(), make_year(), make_year()];
+    public years = [make_year(), make_year(), make_year(), make_year()] as string[][][];
     public prior_credit: string[] = [];
     public requirements: string[] = [];
+    public unsat = [make_year(), make_year(), make_year(), make_year()] as string[][][];
+    public force_sat = [make_year(), make_year(), make_year(), make_year()] as boolean[][][];
 }
 
 const road_state = {
@@ -73,19 +75,25 @@ export const roads: Module<typeof road_state, any> = {
                 }
             }
             arr.push(course);
+            if (year !== -1) {
+                course_roads[viewing][1].unsat[year][quarter].push("");
+            }
         },
         _splice_course({ course_roads, viewing },
-            { year, quarter, idx, course }: { year: number, quarter: number, idx: number, course: string }) {
+            { year, quarter, idx, unsat, course }:
+                { year: number, quarter: number, idx: number, unsat: string, course: string }) {
             if (year === -1) {
                 course_roads[viewing][1].prior_credit.splice(idx, 0, course);
             } else {
                 course_roads[viewing][1].years[year][quarter].splice(idx, 0, course);
+                course_roads[viewing][1].unsat[year][quarter].splice(idx, 0, unsat);
             }
         },
         _remove_course({ course_roads, viewing },
             { year, quarter, idx }: { year: number, quarter: number, idx: number }) {
             if (year !== -1) {
                 course_roads[viewing][1].years[year][quarter].splice(idx, 1);
+                course_roads[viewing][1].unsat[year][quarter].splice(idx, 1);
             } else {
                 course_roads[viewing][1].prior_credit.splice(idx, 1);
             }
@@ -104,6 +112,28 @@ export const roads: Module<typeof road_state, any> = {
         },
         _load(state, new_state: typeof state) {
             state.course_roads = new_state.course_roads;
+            state.course_roads.map(arr => arr[1]).forEach(road => {
+                if (!road.unsat) {
+                    road.unsat = [make_year(), make_year(), make_year(), make_year()];
+                    for (let i = 0; i < road.years.length; i++) {
+                        for (let j = 0; j < road.years[i].length; j++) {
+                            for (const _ of road.years[i][j]) {
+                                road.unsat[i][j].push("");
+                            }
+                        }
+                    }
+                }
+                if (!road.force_sat) {
+                    road.force_sat = [make_year(), make_year(), make_year(), make_year()];
+                    for (let i = 0; i < road.years.length; i++) {
+                        for (let j = 0; j < road.years[i].length; j++) {
+                            for (const _ of road.years[i][j]) {
+                                road.force_sat[i][j].push(false);
+                            }
+                        }
+                    }
+                }
+            });
             state.viewing = new_state.viewing;
         },
         _set_stack(state, new_stack: typeof state.undo_stack) {
@@ -128,6 +158,20 @@ export const roads: Module<typeof road_state, any> = {
             if (state.idx < state.undo_stack.length - 1) {
                 state.undo_stack[++state.idx].redo();
             }
+        },
+        _update_unsat({ course_roads, viewing }, { year, quarter, unsat }:
+            { year: number, quarter: number, idx: number, unsat: string[] }) {
+            course_roads[viewing][1].unsat[year].splice(quarter, 1, unsat);
+        },
+        _specific_unsat({ course_roads, viewing },
+            { year, quarter, idx, unsat }:
+                { year: number, quarter: number, idx: number, unsat: string }) {
+            course_roads[viewing][1].unsat[year][quarter].splice(idx, 1, unsat);
+        },
+        _force_sat({ course_roads, viewing },
+            { year, quarter, idx, force }:
+                { year: number, quarter: number, idx: number, force: boolean }) {
+            course_roads[viewing][1].force_sat[year][quarter].splice(idx, 1, force);
         }
     },
     actions: {
@@ -166,32 +210,20 @@ export const roads: Module<typeof road_state, any> = {
             });
             dispatch("save");
         },
-        add_year({ state, commit, dispatch }) {
-            const idx = state.course_roads[state.viewing][1].years.length;
-            commit("_add_year");
-            commit("_log", {
-                redo: () => { commit("_add_year"); dispatch("save"); },
-                undo: () => { commit("_remove_year", idx); dispatch("save"); }
-            });
-            dispatch("save");
-        },
-        remove_year({ state, commit, dispatch }, idx: number) {
-            const year = state.course_roads[state.viewing][1].years[idx];
-            commit("_remove_year", idx);
-            commit("_log", {
-                redo: () => { commit("_splice_year", { idx, year }); dispatch("save"); },
-                undo: () => { commit("_remove_year", idx); dispatch("save"); }
-            });
-            dispatch("save");
-        },
         add_course({ state, commit, dispatch },
             pack: { year: number, quarter: number, course: string }) {
             const idx = pack.year === -1 ? state.course_roads[state.viewing][1].prior_credit.length
                 : state.course_roads[state.viewing][1].years[pack.year][pack.quarter].length;
+            let unsat = "";
             commit("_add_course", pack);
             commit("_log", {
-                redo: () => { commit("_add_course", pack); dispatch("save"); },
+                redo: () => {
+                    commit("_add_course", pack);
+                    dispatch("save");
+                    commit("_specific_unsat", { year: pack.year, quarter: pack.quarter, idx, unsat });
+                },
                 undo: () => {
+                    unsat = state.course_roads[state.viewing][1].unsat[pack.year][pack.quarter][idx];
                     commit("_remove_course", { year: pack.year, quarter: pack.quarter, idx });
                     dispatch("save");
                 }
@@ -201,6 +233,7 @@ export const roads: Module<typeof road_state, any> = {
         remove_course({ state, commit, dispatch }, pack: { year: number, quarter: number, idx: number }) {
             const course = pack.year === -1 ? state.course_roads[state.viewing][1].prior_credit[pack.idx]
                 : state.course_roads[state.viewing][1].years[pack.year][pack.quarter][pack.idx];
+            (pack as any).unsat = state.course_roads[state.viewing][1].unsat[pack.year][pack.quarter][pack.idx];
             commit("_remove_course", pack);
             commit("_log", {
                 undo: () => { commit("_splice_course", { ...pack, course }); dispatch("save"); },
@@ -244,7 +277,25 @@ export const roads: Module<typeof road_state, any> = {
             }
         },
         undo({ commit }) { commit("_undo"); },
-        redo({ commit }) { commit("_redo"); }
+        redo({ commit }) { commit("_redo"); },
+        update_unsat({ commit, dispatch }, pack: { year: number, quarter: number, unsat: boolean[] }) {
+            commit("_update_unsat", pack);
+            dispatch("save");
+        },
+        force_sat({ commit, dispatch }, pack: { year: number, quarter: number, idx: number, force: boolean }) {
+            commit("_force_sat", pack);
+            dispatch("save");
+            commit("_log", {
+                undo: () => {
+                    commit("_force_sat", { year: pack.year, quarter: pack.quarter, idx: pack.idx, force: !pack.force });
+                    dispatch("save");
+                },
+                redo: () => {
+                    commit("_force_sat", pack);
+                    dispatch("save");
+                }
+            });
+        }
     },
     namespaced: true,
 };

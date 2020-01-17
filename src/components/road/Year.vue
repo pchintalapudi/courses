@@ -48,6 +48,7 @@
             :course_id="course"
             @load-course="$emit('load-course', $event)"
             @remove-course="remove(idx, i, j)"
+            @force-sat="$emit('force-sat', $event)"
             :year="idx"
             :quarter="i"
             :idx="j"

@@ -45,6 +45,113 @@ export function requisite_parser(requisites: string) {
     return out;
 }
 
+class ReqCombo {
+    public constructor(public or: boolean, public reqs: Array<string | ReqCombo>) { }
+
+    public unsatisfied(courses: Set<string>) {
+        if (this.or) {
+            const failed = [] as string[];
+            for (const req of this.reqs) {
+                if (typeof req === "string") {
+                    const possible = de_gir(req);
+                    for (const course of possible) {
+                        if (courses.has(course)) {
+                            return "";
+                        }
+                    }
+                    failed.push(req);
+                } else {
+                    const end = req.unsatisfied(courses);
+                    if (!end) {
+                        return "";
+                    } else {
+                        failed.push(end);
+                    }
+                }
+            }
+            return failed.length === 1 ? failed[0] : `(${failed.join(" or ")})`;
+        } else {
+            const failed = [] as string[];
+            for (const req of this.reqs) {
+                if (typeof req === "string") {
+                    const possible = de_gir(req);
+                    let sat = false;
+                    for (const course of possible) {
+                        // tslint:disable-next-line: no-conditional-assignment
+                        if (sat = courses.has(course)) {
+                            break;
+                        }
+                    }
+                    if (!sat) {
+                        failed.push(req);
+                    }
+                } else {
+                    const end = req.unsatisfied(courses);
+                    if (end) {
+                        failed.push(end);
+                    }
+                }
+            }
+            return failed.length ? failed.length === 1 ? failed[0] : `(${failed.join(" and ")})` : "";
+        }
+    }
+}
+
+// tslint:disable-next-line: max-classes-per-file
+class ReqHeader {
+    public constructor(public req: string | ReqCombo) { }
+
+    public unsatisfied(courses: Set<string>) {
+        if (typeof this.req === "string") {
+            const possible = de_gir(this.req);
+            for (const course of possible) {
+                if (courses.has(course)) {
+                    return "";
+                }
+            }
+            return this.req;
+        } else {
+            return this.req.unsatisfied(courses);
+        }
+    }
+}
+
+export function properRequisiteParse(requisites: string): ReqHeader {
+    return new ReqHeader(_properRequisiteParse(requisites, 0)[0]);
+}
+
+function _properRequisiteParse(requisites: string, idx: number): [string | ReqCombo, number] {
+    const building = [] as string[];
+    const built = [] as Array<string | ReqCombo>;
+    let split = "";
+    for (; idx < requisites.length; idx++) {
+        const char = requisites[idx];
+        if (char === ",") {
+            built.push(building.join(""));
+            building.length = 0;
+            split = char;
+            idx++;
+        } else if (char === "/") {
+            built.push(building.join(""));
+            building.length = 0;
+            split = char;
+        } else if (char === "(") {
+            const build = _properRequisiteParse(requisites, idx + 1);
+            idx = build[1];
+            built.push(build[0]);
+        } else if (char === ")") {
+            break;
+        } else {
+            building.push(char);
+        }
+    }
+    built.push(building.join(""));
+    const final = built.filter(s => s);
+    return [split ? new ReqCombo(split === "/", final) : final[0], idx];
+}
+
+(window as any).reqparse = properRequisiteParse;
+
 function is_gir(id: string) {
     return id.indexOf("GIR") !== -1;
 }
