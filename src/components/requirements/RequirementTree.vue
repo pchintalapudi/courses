@@ -15,12 +15,13 @@
     </div>
     <template v-if="(has_progress || has_requirement) && !collapsed">
       <requirement-vue
-        v-for="(req, idx) in reqs.reqs.reqs"
-        :key="`requirement ${reqs.reqs.list_id} idx ${idx}`"
+        v-for="(req, i) in reqs.reqs.reqs"
+        :key="requirements.name + '.' + i"
         :req="req"
         :idx="idx"
-        :name="reqs.reqs.short_title + reqs.reqs.title"
+        :name="requirements.name + '.' + i"
         :overrides="requirements.overrides"
+        @req-override="$emit('req-override', $event)"
       ></requirement-vue>
     </template>
     <span v-else-if="!collapsed">Loading Requirements...</span>
@@ -38,7 +39,7 @@ import {
 } from "@/fireroad";
 import RequirementVue from "./Requirement.vue";
 import CloseButtonVue from "@/components/utils/ActionButton.vue";
-import { RequirementData } from '@/store/road';
+import { RequirementData } from "@/store/road";
 interface Requirements {
   loading: boolean;
   reqs: RequirementTitles;
@@ -46,14 +47,17 @@ interface Requirements {
 export default Vue.extend({
   components: { RequirementVue, CloseButtonVue },
   props: {
-    requirements: Object as () => RequirementData
+    requirements: Object as () => RequirementData,
+    idx: Number
   },
   data() {
     return { collapsed: true };
   },
   computed: {
     reqs(): Requirements | undefined {
-      return this.$store.state.requirements.manifest.get(this.requirements.name);
+      return this.$store.state.requirements.manifest.get(
+        this.requirements.name
+      );
     },
     has_requirement(): boolean {
       return (

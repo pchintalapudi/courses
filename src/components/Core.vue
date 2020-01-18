@@ -1,13 +1,15 @@
 <template>
   <main>
     <aside class="requirements">
-      <requirement-search-vue :disable="viewing===-1" @load-requirement="add_requirement"></requirement-search-vue>
+      <requirement-search-vue :disable="!road" @load-requirement="add_requirement"></requirement-search-vue>
       <section class="reqs" v-if="road">
         <requirement-tree-vue
           v-for="(req, idx) in requirements"
-          :key="`Requirement ${req}`"
+          :key="`Requirement ${req.name}`"
           :requirements="req"
+          :idx="idx"
           @remove-requirement="remove_req(idx)"
+          @req-override="override"
         ></requirement-tree-vue>
       </section>
       <section v-else>
@@ -152,6 +154,7 @@ export default Vue.extend({
       ) {
         this.$store.dispatch("roads/undo");
         this.graph_redraw();
+        this.update_progresses();
       }
     };
     const redo = (ev: KeyboardEvent) => {
@@ -164,6 +167,7 @@ export default Vue.extend({
       ) {
         this.$store.dispatch("roads/redo");
         this.graph_redraw();
+        this.update_progresses();
       }
     };
     window.addEventListener("keydown", undo);
@@ -252,8 +256,15 @@ export default Vue.extend({
       );
       return {
         coursesOfStudy: this.requirements.map(r => r.name),
+        progressOverrides: this.overrides,
         selectedSubjects: classes
       };
+    },
+    overrides(): any {
+      return this.road!.requirements.flatMap(data => data.overrides).reduce(
+        (old, obj) => Object.assign(old, obj),
+        {}
+      );
     }
   },
   methods: {
@@ -355,12 +366,22 @@ export default Vue.extend({
     add_requirement(req: string) {
       this.$store.dispatch("requirements/progress", {
         reqs: [req],
+        progressOverrides: this.overrides,
         courses: this.road_json
       });
       this.$store.dispatch("roads/add_requirement", req);
     },
     remove_req(idx: number) {
       this.$store.dispatch("roads/remove_requirement", idx);
+    },
+    override(obj: any) {
+      const idx = obj.idx;
+      this.$store.dispatch("roads/toggle_override", obj);
+      this.$store.dispatch("requirements/progress", {
+        reqs: [this.requirements[idx].name],
+        progressOverrides: this.overrides,
+        courses: this.road_json
+      });
     },
     update_progresses() {
       if (!this.progress_update) {
@@ -371,7 +392,8 @@ export default Vue.extend({
           }, 1000);
         } else {
           this.$store.dispatch("requirements/progress", {
-            reqs: this.requirements,
+            reqs: this.requirements.map(r => r.name),
+            progressOverrides: this.overrides,
             courses: this.road_json
           });
           this.progress_update = 0;

@@ -14,7 +14,7 @@ export interface ClassData {
 
 export interface RequirementData {
     name: string;
-    overrides: string[];
+    overrides: any[];
 }
 
 // tslint:disable-next-line: max-classes-per-file
@@ -160,6 +160,19 @@ export const roads: Module<typeof road_state, any> = {
             { year, quarter, idx, force }:
                 { year: number, quarter: number, idx: number, force: boolean }) {
             course_roads[viewing].years[year][quarter][idx].force_sat = force;
+        },
+        _toggle_override({ course_roads, viewing }, obj: any) {
+            const overrides = course_roads[viewing].requirements[obj.idx].overrides;
+            delete obj.idx;
+            for (let i = 0; i < overrides.length; i++) {
+                for (const key in overrides[i]) {
+                    if (key in obj) {
+                        overrides.splice(i, 1);
+                        return;
+                    }
+                }
+            }
+            overrides.push(obj);
         }
     },
     actions: {
@@ -229,7 +242,12 @@ export const roads: Module<typeof road_state, any> = {
         },
         add_requirement({ state, commit, dispatch }, requirement: string) {
             const idx = state.course_roads[state.viewing].requirements.length;
-            commit("_add_requirement", requirement);
+            for (const req of state.course_roads[state.viewing].requirements) {
+                if (req.name === requirement) {
+                    return;
+                }
+            }
+            commit("_add_requirement", { name: requirement, overrides: [] });
             commit("_log", {
                 undo: () => { commit("_remove_requirement", idx); dispatch("save"); },
                 redo: () => { commit("_add_requirement", { name: requirement, overrides: [] }); dispatch("save"); }
@@ -278,6 +296,22 @@ export const roads: Module<typeof road_state, any> = {
                 },
                 redo: () => {
                     commit("_force_sat", pack);
+                    dispatch("save");
+                }
+            });
+        },
+        toggle_override({ commit, dispatch }, obj: any) {
+            const idx = obj.idx;
+            commit("_toggle_override", obj);
+            dispatch("save");
+            commit("_log", {
+                undo: () => {
+                    obj.idx = idx;
+                    commit("_toggle_override", obj);
+                    dispatch("save");
+                }, redo: () => {
+                    obj.idx = idx;
+                    commit("_toggle_override", obj);
                     dispatch("save");
                 }
             });

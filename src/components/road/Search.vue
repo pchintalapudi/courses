@@ -47,7 +47,7 @@ export default Vue.extend({
     },
     key(key: KeyboardEvent) {
       if (key.key === "Enter") {
-        if (this.search_results.length === 1 || this.timeout) {
+        if (this.search_results.length === 1 || this.timeout && this.search_results.length) {
           this.show(this.search_results[0]);
         } else {
           this.timeout = window.setTimeout(() => (this.timeout = 0), 500);

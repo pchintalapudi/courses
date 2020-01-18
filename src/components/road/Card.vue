@@ -6,19 +6,24 @@
     :style="`background-color:${color};`"
     :id="JSON.stringify({year, quarter, idx})"
     :unsat="unsafe_sat || course_id.force_sat ? false : !!course_id.unsat"
+    :force-sat="!unsafe_sat && course_id.force_sat"
   >
     <h3>
       {{course_id.name}}
-      <close-button-vue @button-click="$emit('remove-course')" :close="true" :title="`Remove ${course_id.name}`"></close-button-vue>
+      <close-button-vue
+        @button-click="$emit('remove-course')"
+        :close="true"
+        :title="`Remove ${course_id.name}`"
+      ></close-button-vue>
     </h3>
     <p>{{course ? display_name : 'Loading Course Name...'}}</p>
     <transition name="fade">
       <p
         v-if="!unsafe_sat && course_id.unsat"
         class="unsat"
-        :title="unsafe_sat && course_id.force_sat ? false : `Click to hide warning`"
+        :title="unsafe_sat ? false : `Click to ${course_id.force_sat ? 'show' : 'hide'} warning`"
         @click.stop="$emit('force-sat', {year, quarter, idx})"
-      >{{course_id.force_sat ? "Click to show warning" : "Missing:\n" + course_id.unsat}}</p>
+      >{{course_id.force_sat ? "" : "Missing:\n" + course_id.unsat}}</p>
     </transition>
   </article>
 </template>
@@ -26,10 +31,15 @@
 import Vue from "vue";
 import CloseButtonVue from "@/components/utils/ActionButton.vue";
 import { CourseJSON, FullCourseJSON, compute_color } from "@/fireroad";
-import { ClassData } from '@/store/road';
+import { ClassData } from "@/store/road";
 export default Vue.extend({
   components: { CloseButtonVue },
-  props: { course_id: Object as () => ClassData, year: Number, quarter: Number, idx: Number },
+  props: {
+    course_id: Object as () => ClassData,
+    year: Number,
+    quarter: Number,
+    idx: Number
+  },
   computed: {
     course(): CourseJSON | undefined {
       return this.$store.getters["classes/class"](this.course_id.name);
@@ -119,5 +129,45 @@ export default Vue.extend({
 }
 .card:hover .unsat:active {
   background-color: hsl(0deg, 75%, 30%);
+}
+.card[force-sat] .unsat,
+.card[force-sat] .unsat:hover,
+.card[force-sat] .unsat:active {
+  background-color: transparent;
+  pointer-events: none;
+}
+[force-sat] .unsat::after, [force-sat] .unsat::before {
+    pointer-events: none;
+    opacity: 0;
+    content: "";
+}
+[force-sat]:hover .unsat::after {
+  content: "!";
+  font-size: 1.5em;
+  display: inline-block;
+  transform: translate(-.925em, -1.25em);
+  opacity: 1;
+  width: 1.5em;
+  height:1.5em;
+  text-align: center;
+}
+[force-sat]:hover .unsat::before {
+  border: solid transparent 2.25em;
+  border-bottom-color: hsl(0deg, 75%, 50%);
+  border-left-width: 1.25em;
+  border-right-width: 1.25em;
+  display: inline-block;
+  content: "";
+  box-sizing: border-box;
+  transform: translate(1em, -1.5em);
+  transition: border-bottom-color 300ms;
+  pointer-events: auto;
+  opacity: 1;
+}
+[force-sat] .unsat:hover::before {
+  border-bottom-color: hsl(0deg, 75%, 40%);
+}
+[force-sat] .unsat:active::before {
+  border-bottom-color: hsl(0deg, 75%, 30%);
 }
 </style>

@@ -1,7 +1,12 @@
 <template>
   <article>
     <template v-if="is_req">
-      <h3 class="req" :completed="req.fulfilled">{{req.req}}</h3>
+      <h3
+        class="req"
+        :completed="req.fulfilled"
+        :override="can_override && overriden"
+        @click="override"
+      >{{req.req}}</h3>
     </template>
     <section class="children" :collapsed="collapsed" v-else>
       <h3
@@ -17,10 +22,12 @@
       <template v-if="!collapsed">
         <requirement-vue
           v-for="(child, i) in children"
-          :key="key_prefix + i"
+          :key="name + '.' + i"
           :req="child"
-          :idx="i"
-          :name="key_prefix + i"
+          :idx="idx"
+          :name="name + '.' + i"
+          :overrides="overrides"
+          @req-override="$emit('req-override', $event)"
         ></requirement-vue>
       </template>
     </section>
@@ -32,8 +39,9 @@ import { Requirement, RequirementGroup, is_requirement } from "@/fireroad/";
 export default Vue.extend({
   props: {
     req: Object as () => Requirement | RequirementGroup,
+    name: String,
     idx: Number,
-    name: String
+    overrides: Array as () => any[]
   },
   data() {
     return { collapsed: true };
@@ -45,8 +53,21 @@ export default Vue.extend({
     children(): Array<Requirement | RequirementGroup> {
       return (this.req as RequirementGroup).reqs;
     },
-    key_prefix(): string {
-      return this.name + this.idx;
+    can_override(): boolean {
+      return this.is_req && !!this.req.threshold;
+    },
+    overriden(): boolean {
+      return this.overrides.findIndex(obj => this.name in obj) !== -1;
+    }
+  },
+  methods: {
+    override() {
+      if (this.can_override) {
+        const obj: any = {};
+        obj[this.name] = this.req.threshold!.cutoff;
+        obj.idx = this.idx;
+        this.$emit("req-override", obj);
+      }
     }
   },
   name: "requirement-vue"
@@ -54,7 +75,6 @@ export default Vue.extend({
 </script>
 <style scoped>
 .req-header {
-  cursor: pointer;
   margin-left: -2em;
 }
 .req,
@@ -63,6 +83,7 @@ export default Vue.extend({
   position: relative;
   min-width: 200px;
   padding: 5px;
+  cursor: pointer;
 }
 .children {
   padding-left: 2em;
@@ -88,6 +109,11 @@ export default Vue.extend({
   border-left-style: solid;
   --height: 3px;
   transform: translateY(-3px) translateX(-3px) rotate(-45deg);
+}
+[override][completed]::before {
+  border-color: hsl(60deg, 75%, 50%);
+  border-right-color: transparent;
+  border-top-color: transparent;
 }
 .children::before {
   content: "";

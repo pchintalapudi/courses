@@ -18,11 +18,13 @@ export interface RequirementTitles {
 export interface Requirement {
     req: string;
     title?: string;
+    threshold?: { cutoff: any };
 }
 
 export interface RequirementGroup {
     connection_type: 'all' | 'any';
     threshold_desc: string;
+    threshold?: { cutoff: any };
     reqs: Array<Requirement | RequirementGroup>;
     title: string;
 }
@@ -36,7 +38,7 @@ export interface Class {
 
 export interface RoadJSON {
     coursesOfStudy: string[];
-    progressOverrides?: any;
+    progressOverrides: any;
     selectedSubjects: Class[];
 }
 
