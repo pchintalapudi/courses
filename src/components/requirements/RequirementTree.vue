@@ -20,6 +20,7 @@
         :req="req"
         :idx="idx"
         :name="reqs.reqs.short_title + reqs.reqs.title"
+        :overrides="requirements.overrides"
       ></requirement-vue>
     </template>
     <span v-else-if="!collapsed">Loading Requirements...</span>
@@ -37,6 +38,7 @@ import {
 } from "@/fireroad";
 import RequirementVue from "./Requirement.vue";
 import CloseButtonVue from "@/components/utils/ActionButton.vue";
+import { RequirementData } from '@/store/road';
 interface Requirements {
   loading: boolean;
   reqs: RequirementTitles;
@@ -44,14 +46,14 @@ interface Requirements {
 export default Vue.extend({
   components: { RequirementVue, CloseButtonVue },
   props: {
-    requirements: String
+    requirements: Object as () => RequirementData
   },
   data() {
     return { collapsed: true };
   },
   computed: {
     reqs(): Requirements | undefined {
-      return this.$store.state.requirements.manifest.get(this.requirements);
+      return this.$store.state.requirements.manifest.get(this.requirements.name);
     },
     has_requirement(): boolean {
       return (

@@ -41,19 +41,20 @@ import Vue from "vue";
 import MiniCardVue from "./MiniCard.vue";
 import CardVue from "./Card.vue";
 import { CourseJSON } from "@/fireroad";
+import { ClassData } from '@/store/road';
 export default Vue.extend({
   components: { MiniCardVue, CardVue },
-  props: { classes: Array as () => string[], placing: String },
+  props: { classes: Array as () => ClassData[], placing: String },
   data() {
     return { collapse: false };
   },
   computed: {
     unit_count(): string {
-      if (!this.$store.state.classes.manifest_updated) {
+      if (!this.$store.state.classes.manifest_tracker) {
         return "Loading Total Unit Count...";
       }
       const sum = this.classes
-        .map(id => this.$store.state.classes.manifest.get(id)!.total_units)
+        .map(id => this.$store.getters["classes/class"](id.name).total_units)
         .reduce((run, next) => run + next, 0);
       return `Units: ${sum}`;
     }

@@ -19,6 +19,11 @@ const ignore_set = new Set(["by", "of", "in", "as", "the", "and"]);
 
 export const requirements: Module<typeof requirementState, any> = {
     state: requirementState,
+    getters: {
+        autocomplete({ title_search_trie }) {
+            return (word: string) => title_search_trie.autocomplete(word);
+        }
+    },
     mutations: {
         _set_titles(state, titles: RequirementTitles[]) {
             const reqs = titles.map(t => new Requirements(t));

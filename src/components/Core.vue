@@ -2,7 +2,7 @@
   <main>
     <aside class="requirements">
       <requirement-search-vue :disable="viewing===-1" @load-requirement="add_requirement"></requirement-search-vue>
-      <section class="reqs" v-if="viewing!==-1">
+      <section class="reqs" v-if="road">
         <requirement-tree-vue
           v-for="(req, idx) in requirements"
           :key="`Requirement ${req}`"
@@ -17,41 +17,41 @@
     <div class="gutter"></div>
     <section>
       <span class="header">
-        <span class="toggles">
-          <button class="toggle" @click="toggle_curvy" :on="curvy">Fancy Graph</button>
-        </span>
+        <span class="toggles"></span>
         <search-vue class="search" @load-course="inspect"></search-vue>
       </span>
       <nav class="roads">
         <span class="road-list">
-          <span
-            v-for="(name, idx) in roadNames"
-            :key="idx"
-            class="road-title"
-            :selected="viewing===idx"
-            @click="view(idx)"
-            @dblclick="edit(idx)"
-          >
-            <p class="road-title" v-if="editing!==idx">
-              <b>{{name}}</b>
-              <action-button-vue @button-click="remove_road(idx)" :close="true"></action-button-vue>
-            </p>
-            <input
-              type="text"
-              name="road-editor"
-              id="road-editor"
-              v-model="editingText"
-              @keydown.enter="finish_editing"
-              @blur="finish_editing"
-              @click.stop
-              v-else
-            />
-          </span>
-          <i v-if="viewing===-1">Create a new road! ---></i>
+          <template v-if="road">
+            <span
+              v-for="(name, idx) in roadNames"
+              :key="idx"
+              class="road-title"
+              :selected="road.name===name"
+              @click="view(idx)"
+              @dblclick="edit(idx)"
+            >
+              <p class="road-title" v-if="editing!==idx">
+                <b>{{name}}</b>
+                <action-button-vue @button-click="remove_road(idx)" :close="true"></action-button-vue>
+              </p>
+              <input
+                type="text"
+                name="road-editor"
+                id="road-editor"
+                v-model="editingText"
+                @keydown.enter="finish_editing"
+                @blur="finish_editing"
+                @click.stop
+                v-else
+              />
+            </span>
+          </template>
+          <i v-else>Create a new road! ---></i>
         </span>
         <action-button-vue @button-click="new_road"></action-button-vue>
       </nav>
-      <div v-if="viewing!==-1" style="overflow:auto;">
+      <div v-if="road" style="overflow:auto;">
         <article class="road-display">
           <svg id="graph" v-show="graph_mode" />
           <prior-credit-vue
@@ -115,9 +115,9 @@ import {
   is_full_course,
   FullCourseJSON
 } from "@/fireroad";
-import { Quarter } from "@/store/road";
+import { Quarter, Road, ClassData, RequirementData } from "@/store/road";
 import { graph_untrack, graph_track } from "@/dom/graph";
-import { properRequisiteParse } from "../fireroad/demystify";
+import { properRequisiteParse } from "@/fireroad/demystify";
 export default Vue.extend({
   created() {
     this.$store.dispatch("classes/init");
@@ -133,16 +133,15 @@ export default Vue.extend({
     ActionButtonVue
   },
   async mounted() {
+    await this.$store.dispatch("roads/load");
     const redrawer = () => this.graph_redraw();
     window.addEventListener("resize", redrawer);
-    this.$once("hook:beforeDestroy", () =>
-      window.removeEventListener("resize", redrawer)
-    );
-    await this.$store.dispatch("roads/load");
-    this.load_classes();
-    this.update_progresses();
-    this.compute_sat();
-    redrawer();
+    if (this.road) {
+      this.graph_redraw();
+      this.load_classes();
+      this.update_progresses();
+      this.compute_sat();
+    }
     const undo = (ev: KeyboardEvent) => {
       if (
         ev.key === "z" &&
@@ -169,12 +168,11 @@ export default Vue.extend({
     };
     window.addEventListener("keydown", undo);
     window.addEventListener("keydown", redo);
-    this.$once("hook:beforeDestroy", () =>
-      window.removeEventListener("keydown", undo)
-    );
-    this.$once("hook:beforeDestroy", () =>
-      window.removeEventListener("keydown", redo)
-    );
+    this.$once("hook:beforeDestroy", () => {
+      window.removeEventListener("resize", redrawer);
+      window.removeEventListener("keydown", undo);
+      window.removeEventListener("keydown", redo);
+    });
   },
   data() {
     return {
@@ -205,24 +203,22 @@ export default Vue.extend({
     viewing(): number {
       return this.$store.state.roads.viewing;
     },
-    viewableRoad(): boolean {
-      return this.viewing > -1;
-    },
     roadNames(): string[] {
       return this.$store.state.roads.course_roads.map(
-        (tup: [string, any]) => tup[0]
+        (road: Road) => road.name
       );
     },
-    years(): string[][][] {
-      return this.$store.state.roads.course_roads[this.viewing][1].years;
+    road(): Road | undefined {
+      return this.$store.getters["roads/road"];
     },
-    prior_credit(): string[] {
-      return this.$store.state.roads.course_roads[this.viewing][1].prior_credit;
+    years(): ClassData[][][] {
+      return this.road!.years;
+    },
+    prior_credit(): ClassData[] {
+      return this.road!.prior_credit;
     },
     inspect_course(): CourseJSON | undefined {
-      return this.$store.state.classes.manifest_updated
-        ? this.$store.state.classes.manifest.get(this.inspecting)!
-        : undefined;
+      return this.$store.getters["classes/class"](this.inspecting);
     },
     inspect_index(): number {
       return this.inspection_history.indexOf(this.inspecting);
@@ -237,10 +233,10 @@ export default Vue.extend({
           ]
         : undefined;
     },
-    requirements(): string[] {
-      return this.$store.state.roads.course_roads[this.viewing][1].requirements;
+    requirements(): RequirementData[] {
+      return this.road!.requirements;
     },
-    courses(): string[] {
+    courses(): ClassData[] {
       return this.years
         .flatMap(s => s.flatMap(a => a))
         .concat(this.prior_credit);
@@ -254,7 +250,10 @@ export default Vue.extend({
           arr.flatMap((s, j) => s.map((id, k) => this.make_class(id, i, j, k)))
         )
       );
-      return { coursesOfStudy: this.requirements, selectedSubjects: classes };
+      return {
+        coursesOfStudy: this.requirements.map(r => r.name),
+        selectedSubjects: classes
+      };
     }
   },
   methods: {
@@ -292,7 +291,7 @@ export default Vue.extend({
     },
     edit(idx: number) {
       this.editing = idx;
-      this.editingText = this.$store.state.roads.course_roads[idx][0];
+      this.editingText = this.$store.state.roads.course_roads[idx].name;
     },
     inspect(course: string) {
       this.$store.dispatch("classes/load", course);
@@ -365,7 +364,7 @@ export default Vue.extend({
     },
     update_progresses() {
       if (!this.progress_update) {
-        if (!this.$store.state.classes.manifest_updated) {
+        if (!this.$store.state.classes.manifest_tracker) {
           this.progress_update = window.setTimeout(() => {
             this.progress_update = 0;
             this.update_progresses();
@@ -380,17 +379,20 @@ export default Vue.extend({
       }
     },
     load_classes() {
-      this.courses.forEach(course =>
-        this.$store.dispatch("classes/load", course)
-      );
+      if (this.road) {
+        this.courses.forEach(course =>
+          this.$store.dispatch("classes/load", course.name)
+        );
+      }
     },
-    tracker(req: string): number {
-      return this.$store.state.requirements.manifest.get(req)!.tracker;
-    },
-    make_class(id: string, year: number, quarter: number, idx: number): Class {
-      const course: CourseJSON = this.$store.state.classes.manifest.get(id)!;
+    make_class(
+      id: ClassData,
+      year: number,
+      quarter: number,
+      idx: number
+    ): Class {
       return {
-        id,
+        id: id.name,
         index: year * 4 + 1 + quarter + idx,
         overrideWarnings: false,
         semester: year * 4 + 1 + quarter
@@ -402,8 +404,10 @@ export default Vue.extend({
         quarter: 0
       }
     ) {
-      this.graph_detrack(year, quarter);
-      this.$nextTick(() => this.graph_retrack(year, quarter));
+      if (this.road) {
+        this.graph_detrack(year, quarter);
+      }
+      this.$nextTick(() => this.road && this.graph_retrack(year, quarter));
     },
     graph_courses(year: number, quarter: number) {
       const courses = [] as Array<{
@@ -418,7 +422,7 @@ export default Vue.extend({
             year: -1,
             quarter: 0,
             idx,
-            course
+            course: course.name
           }))
         );
       } else {
@@ -428,7 +432,7 @@ export default Vue.extend({
               year,
               quarter: quarter + q,
               idx,
-              course
+              course: course.name
             }))
           )
         );
@@ -440,7 +444,7 @@ export default Vue.extend({
               year: year + y,
               quarter: q,
               idx,
-              course
+              course: course.name
             }))
           )
         )
@@ -475,7 +479,7 @@ export default Vue.extend({
             idx: number;
             course: string;
           } = JSON.parse(id);
-          const c = this.$store.state.classes.manifest.get(course.course);
+          const c = this.$store.getters["classes/class"](course.course);
           if (c && is_full_course(c)) {
             draw.push([course, c, id]);
           }
@@ -510,9 +514,9 @@ export default Vue.extend({
     _sat_recompute() {
       const course_set = new Set<string>();
       for (const course of this.prior_credit) {
-        course_set.add(course);
-        const full_course = this.$store.state.classes.manifest.get(
-          course
+        course_set.add(course.name);
+        const full_course = this.$store.getters["classes/class"](
+          course.name
         ) as FullCourseJSON;
         if (!full_course || !is_full_course(full_course)) {
           this.sat_update = window.setTimeout(
@@ -532,8 +536,8 @@ export default Vue.extend({
         for (let j = 0; j < this.years[i].length; j++) {
           const unsat = [] as string[];
           for (const course of this.years[i][j]) {
-            const full_course = this.$store.state.classes.manifest.get(
-              course
+            const full_course = this.$store.getters["classes/class"](
+              course.name
             ) as FullCourseJSON;
             if (!full_course || !is_full_course(full_course)) {
               this.sat_update = window.setTimeout(
@@ -552,11 +556,11 @@ export default Vue.extend({
             }
           }
           for (const course of this.years[i][j]) {
-            course_set.add(course);
+            course_set.add(course.name);
           }
           for (let k = 0; k < this.years[i][j].length; k++) {
-            const full_course = this.$store.state.classes.manifest.get(
-              this.years[i][j][k]
+            const full_course = this.$store.getters["classes/class"](
+              this.years[i][j][k].name
             ) as FullCourseJSON;
             if (full_course.corequisites) {
               const fail_coreq = properRequisiteParse(
@@ -579,9 +583,8 @@ export default Vue.extend({
       this.sat_update = 0;
     },
     toggle_sat(pack: { year: number; quarter: number; idx: number }) {
-      (pack as any).force = !this.$store.state.roads.course_roads[
-        this.$store.state.roads.viewing
-      ][1].force_sat[pack.year][pack.quarter][pack.idx];
+      (pack as any).force = !this.road!.years[pack.year][pack.quarter][pack.idx]
+        .force_sat;
       this.$store.dispatch("roads/force_sat", pack);
     }
   }

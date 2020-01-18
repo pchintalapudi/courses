@@ -4,18 +4,26 @@ import { Module } from "vuex";
 const classModuleState = {
     manifest: new Map<string, CourseJSON>(),
     loaded: new Set<string>(),
-    manifest_updated: 0,
+    manifest_tracker: 0,
     id_search_trie: new Trie(),
     access_log: new Map<string, Set<string>>()
 };
 
 // After n classes are loaded, we assume the whole department is of interest to the student
 // So on the n+1th load we also load the whole department's full course registry
-// We therefore set this constant as 5 because why not
-const _LOAD_WHOLE_DEPT = 5;
+// We therefore set this constant because why not
+const _LOAD_WHOLE_DEPT = 3;
 
 export const classes: Module<typeof classModuleState, any> = {
     state: classModuleState,
+    getters: {
+        class({ manifest, manifest_tracker }) {
+            return (id: string) => manifest_tracker ? manifest.get(id) : undefined;
+        },
+        autocomplete({ id_search_trie }) {
+            return (word: string) => id_search_trie.autocomplete(word);
+        }
+    },
     mutations: {
         _load({ loaded }, dept_or_id: string) {
             loaded.add(dept_or_id);
@@ -27,11 +35,11 @@ export const classes: Module<typeof classModuleState, any> = {
         },
         _set_course(state, course: CourseJSON) {
             state.manifest.set(course.subject_id, course);
-            state.manifest_updated += 1;
+            state.manifest_tracker += 1;
         },
         _bulk_load(state, manifest: Map<string, CourseJSON>) {
             state.manifest = manifest;
-            state.manifest_updated = 1;
+            state.manifest_tracker = 1;
             manifest.forEach((v, k) => state.id_search_trie.add(k, v));
         }
     },
@@ -55,14 +63,14 @@ export const classes: Module<typeof classModuleState, any> = {
             }
         },
         _delay_manifest_load({ state, commit, dispatch }, course: CourseJSON) {
-            if (!state.manifest_updated) {
+            if (!state.manifest_tracker) {
                 window.setTimeout(() => dispatch("_delay_manifest_load", course), 1000);
             } else {
                 commit('_set_course', course);
             }
         },
         _delay_dept_load({ state, commit, dispatch }, courses: CourseJSON[]) {
-            if (!state.manifest_updated) {
+            if (!state.manifest_tracker) {
                 window.setTimeout(() => dispatch("_delay_dept_load", courses), 1000);
             } else {
                 courses.forEach((c) => commit("_set_course", c));

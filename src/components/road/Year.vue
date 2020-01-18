@@ -62,11 +62,11 @@
 import Vue from "vue";
 import CardVue from "./Card.vue";
 import MiniCardVue from "./MiniCard.vue";
-import { Road } from "@/store/road";
+import { Road, ClassData } from "@/store/road";
 export default Vue.extend({
   components: { MiniCardVue, CardVue },
   props: {
-    year: Array as () => string[][],
+    year: Array as () => ClassData[][],
     idx: Number,
     placing: String,
     allowed: Array as () => boolean[]
@@ -75,7 +75,7 @@ export default Vue.extend({
     return { collapsed: [false, true, false, true], full_collapse: false };
   },
   computed: {
-    courses(): Array<{ quarter: number; idx: number; course: string }> {
+    courses(): Array<{ quarter: number; idx: number; course: ClassData }> {
       return this.year.flatMap((c, quarter) =>
         c.flatMap((course, idx) => ({ quarter, idx, course }))
       );
@@ -98,30 +98,31 @@ export default Vue.extend({
       return (
         this.allowed &&
         this.allowed[i] &&
-        this.year[i].indexOf(this.placing) === -1
+        this.year[i].findIndex(d => d.name === this.placing) === -1
       );
     },
     forbid(i: number) {
       return (
         this.allowed &&
-        (!this.allowed[i] || this.year[i].indexOf(this.placing) !== -1)
+        (!this.allowed[i] ||
+          this.year[i].findIndex(d => d.name === this.placing) !== -1)
       );
     },
     unit_count(quarter: number): string {
-      if (!this.$store.state.classes.manifest_updated) {
+      if (!this.$store.state.classes.manifest_tracker) {
         return "Loading Total Unit Count...";
       }
       const sum = this.year[quarter]
-        .map(id => this.$store.state.classes.manifest.get(id)!.total_units)
+        .map(id => this.$store.getters["classes/class"](id.name).total_units)
         .reduce((run, next) => run + next, 0);
       return `Units: ${sum}`;
     },
     hour_count(quarter: number): string {
-      if (!this.$store.state.classes.manifest_updated) {
+      if (!this.$store.state.classes.manifest_tracker) {
         return "Loading Total Hour Count...";
       }
       const hours = this.year[quarter]
-        .map(id => this.$store.state.classes.manifest.get(id))
+        .map(id => this.$store.getters["classes/class"](id.name))
         .map(cls =>
           cls.in_class_hours !== undefined &&
           cls.out_of_class_hours !== undefined

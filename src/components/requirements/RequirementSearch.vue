@@ -50,7 +50,7 @@ export default Vue.extend({
         .split(" ")
         .filter(s => !this.ignore_set.has(s));
       const sets: Array<Array<Set<Requirements>>> = words.map(w =>
-        this.$store.state.requirements.title_search_trie.autocomplete(w)
+        this.$store.getters["requirements/autocomplete"](w)
       );
       const set = new Set(sets.flatMap(a => a.flatMap(s => Array.from(s))));
       return Array.from(set);

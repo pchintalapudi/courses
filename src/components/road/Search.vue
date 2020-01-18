@@ -34,7 +34,7 @@ export default Vue.extend({
     },
     search_results(): CourseJSON[] {
       return this.trimmed
-        ? this.$store.state.classes.id_search_trie.autocomplete(
+        ? this.$store.getters["classes/autocomplete"](
             this.trimmed.toUpperCase()
           )
         : [];

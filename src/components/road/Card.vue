@@ -1,24 +1,24 @@
 <template>
   <article
     :title="course ? name : 'Loading Course Name...'"
-    @click.stop="$emit('load-course', course_id)"
-    :class="`card ${course_id}`"
+    @click.stop="$emit('load-course', course_id.name)"
+    :class="`card ${course_id.name}`"
     :style="`background-color:${color};`"
     :id="JSON.stringify({year, quarter, idx})"
-    :unsat="unsafe_sat || force_sat ? false : !!unsat"
+    :unsat="unsafe_sat || course_id.force_sat ? false : !!course_id.unsat"
   >
     <h3>
-      {{course_id}}
-      <close-button-vue @button-click="$emit('remove-course')" :close="true" :title="`Remove ${course_id}`"></close-button-vue>
+      {{course_id.name}}
+      <close-button-vue @button-click="$emit('remove-course')" :close="true" :title="`Remove ${course_id.name}`"></close-button-vue>
     </h3>
     <p>{{course ? display_name : 'Loading Course Name...'}}</p>
     <transition name="fade">
       <p
-        v-if="!unsafe_sat && unsat"
+        v-if="!unsafe_sat && course_id.unsat"
         class="unsat"
-        :title="unsafe_sat && force_sat ? false : `Click to hide warning`"
+        :title="unsafe_sat && course_id.force_sat ? false : `Click to hide warning`"
         @click.stop="$emit('force-sat', {year, quarter, idx})"
-      >{{force_sat ? "Click to show warning" : "Missing:\n" + unsat}}</p>
+      >{{course_id.force_sat ? "Click to show warning" : "Missing:\n" + course_id.unsat}}</p>
     </transition>
   </article>
 </template>
@@ -26,14 +26,13 @@
 import Vue from "vue";
 import CloseButtonVue from "@/components/utils/ActionButton.vue";
 import { CourseJSON, FullCourseJSON, compute_color } from "@/fireroad";
+import { ClassData } from '@/store/road';
 export default Vue.extend({
   components: { CloseButtonVue },
-  props: { course_id: String, year: Number, quarter: Number, idx: Number },
+  props: { course_id: Object as () => ClassData, year: Number, quarter: Number, idx: Number },
   computed: {
     course(): CourseJSON | undefined {
-      return this.$store.state.classes.manifest_updated
-        ? this.$store.state.classes.manifest.get(this.course_id)
-        : undefined;
+      return this.$store.getters["classes/class"](this.course_id.name);
     },
     name(): string {
       return this.course!.title;
@@ -42,20 +41,10 @@ export default Vue.extend({
       return this.truncate_name(this.name);
     },
     color(): string {
-      return `hsl(${compute_color(this.course_id)}deg, 75%, 45%)`;
+      return `hsl(${compute_color(this.course_id.name)}deg, 75%, 45%)`;
     },
     unsafe_sat(): boolean {
       return !this.course || this.year === -1;
-    },
-    unsat(): string {
-      return this.$store.state.roads.course_roads[
-        this.$store.state.roads.viewing
-      ][1].unsat[this.year][this.quarter][this.idx];
-    },
-    force_sat(): boolean {
-      return this.$store.state.roads.course_roads[
-        this.$store.state.roads.viewing
-      ][1].force_sat[this.year][this.quarter][this.idx];
     }
   },
   methods: {
