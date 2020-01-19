@@ -214,8 +214,10 @@ h6 {
   color: white;
   align-items: center;
   justify-content: space-between;
-  background-color: hsl(var(--bg-color), 75%, 50%);
+  background-color: hsl(var(--bg-color), var(--saturate), 50%);
   transition: background-color 500ms;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
 }
 .head > h3 {
   display: flex;
@@ -248,9 +250,10 @@ h6 {
 .info-card {
   display: flex;
   flex-flow: column nowrap;
-  background-color: #121212;
-  border-radius: 2px;
-  box-shadow: 0px 0px 5px #121212;
+  transition: background-color 1s;
+  background-color: hsl(var(--background));
+  border-radius: 5px;
+  box-shadow: 0px 0px 7.5px black;
   margin-right: 2em;
   z-index: 3;
 }
@@ -280,23 +283,22 @@ h5 + * {
   flex-flow: column nowrap;
   color: white;
   border-radius: 5px;
-  box-shadow: 5px 5px 5px #00000044;
   padding: 10px;
   margin: 0 7.5px;
   min-width: 150px;
   text-align: center;
   cursor: pointer;
   transition: background-color 150ms;
-  background-color: hsl(var(--bg-color), 75%, 50%);
+  background-color: hsl(var(--bg-color), var(--saturate), 50%);
 }
 
 .prereqs > :hover,
 .coreqs > :hover {
-  background-color: hsl(var(--bg-color), 75%, 40%);
+  background-color: hsl(var(--bg-color), var(--saturate), 40%);
 }
 .prereqs > :active,
 .coreqs > :active {
-  background-color: hsl(var(--bg-color), 75%, 30%);
+  background-color: hsl(var(--bg-color), var(--saturate), 30%);
 }
 
 .prev > div,

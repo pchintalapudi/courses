@@ -32,7 +32,6 @@ export default Vue.extend({
   flex-flow: column nowrap;
   color: white;
   border-radius: 10px;
-  box-shadow: 5px 5px 5px #00000044;
   margin: 0.25em;
   justify-content: center;
   align-items: center;

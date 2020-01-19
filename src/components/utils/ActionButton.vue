@@ -1,5 +1,5 @@
 <template>
-  <button @click="$emit('button-click')" :open="!close"><p>{{close ? "×" : "+"}}</p></button>
+  <button @click="$emit('button-click')" :open-button="!close"><p>{{close ? "×" : "+"}}</p></button>
 </template>
 <script lang="ts">
 import Vue from "vue";
@@ -8,9 +8,12 @@ export default Vue.extend({
 });
 </script>
 <style scoped>
-button[open]::before {
+button[open-button]::before {
   background-color: #0088ff88;
   font-size: 1.5em;
+}
+button[open-button] {
+    color: hsl(var(--contrast));
 }
 button {
   opacity: var(--button-visible);

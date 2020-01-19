@@ -51,7 +51,7 @@
           </template>
           <i v-else>Create a new road! ---></i>
         </span>
-        <action-button-vue @button-click="new_road"></action-button-vue>
+        <action-button-vue @button-click="new_road" :close="false"></action-button-vue>
       </nav>
       <div v-if="road" style="overflow:auto;">
         <article class="road-display">
@@ -147,10 +147,9 @@ export default Vue.extend({
     const undo = (ev: KeyboardEvent) => {
       if (
         ev.key === "z" &&
-        ev.ctrlKey &&
+        (ev.ctrlKey || ev.metaKey) &&
         !ev.altKey &&
-        !ev.shiftKey &&
-        !ev.metaKey
+        !ev.shiftKey
       ) {
         this.$store.dispatch("roads/undo");
         this.graph_redraw();
@@ -161,21 +160,33 @@ export default Vue.extend({
       if (
         (((ev.key === "Z" || ev.key === "z") && ev.shiftKey) ||
           (ev.key === "y" && !ev.shiftKey)) &&
-        ev.ctrlKey &&
-        !ev.altKey &&
-        !ev.metaKey
+        (ev.ctrlKey || ev.metaKey) &&
+        !ev.altKey
       ) {
         this.$store.dispatch("roads/redo");
         this.graph_redraw();
         this.update_progresses();
       }
     };
+    const dark_mode_toggle = (ev: KeyboardEvent) => {
+      if (
+        (ev.metaKey || ev.ctrlKey) &&
+        ev.shiftKey &&
+        (ev.key === "d" || ev.key === "D") &&
+        !ev.altKey
+      ) {
+          this.toggle_mode();
+          ev.preventDefault();
+      }
+    };
     window.addEventListener("keydown", undo);
     window.addEventListener("keydown", redo);
+    window.addEventListener("keydown", dark_mode_toggle);
     this.$once("hook:beforeDestroy", () => {
       window.removeEventListener("resize", redrawer);
       window.removeEventListener("keydown", undo);
       window.removeEventListener("keydown", redo);
+      window.removeEventListener("keydown", dark_mode_toggle);
     });
   },
   data() {
@@ -608,6 +619,9 @@ export default Vue.extend({
       (pack as any).force = !this.road!.years[pack.year][pack.quarter][pack.idx]
         .force_sat;
       this.$store.dispatch("roads/force_sat", pack);
+    },
+    toggle_mode() {
+      this.$store.dispatch("roads/toggle_mode");
     }
   }
 });
@@ -626,7 +640,7 @@ main {
   flex: 1;
 }
 .gutter {
-  background-color: #ffffff04;
+  background-color: hsla(var(--contrast), var(--level));
   flex: 0.01;
 }
 .requirements {
@@ -647,7 +661,7 @@ main {
 .roads {
   display: flex;
   flex-flow: row nowrap;
-  background-color: #ffffff04;
+  background-color: hsla(var(--contrast), var(--level));
 }
 .road-list {
   display: flex;
@@ -714,8 +728,8 @@ i {
   background-color: #0088ff88;
 }
 input {
-  border: solid #ffffff18 1px;
-  background-color: #ffffff10;
+  border: solid hsla(var(--contrast), calc(var(--level) * 4)) 1px;
+  background-color: hsla(var(--contrast), calc(var(--level) * 2));
   color: white;
   border-radius: 5px;
   padding: 5px;

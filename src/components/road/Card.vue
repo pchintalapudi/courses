@@ -51,7 +51,7 @@ export default Vue.extend({
       return this.truncate_name(this.name);
     },
     color(): string {
-      return `hsl(${compute_color(this.course_id.name)}deg, 75%, 45%)`;
+      return `hsl(${compute_color(this.course_id.name)}deg, var(--saturate), var(--lightness))`;
     },
     unsafe_sat(): boolean {
       return !this.course || this.year === -1;
@@ -89,7 +89,6 @@ export default Vue.extend({
   color: white;
   padding: 10px;
   border-radius: 10px;
-  box-shadow: 5px 5px 5px #00000044;
   margin: 12.5px 0;
   --button-visible: 0;
   position: relative;
@@ -104,7 +103,7 @@ export default Vue.extend({
   --button-visible: 1;
 }
 [unsat] {
-  box-shadow: 5px 5px 5px #00000044, 0px 0px 5px 10px #ff0000;
+  box-shadow: 0px 0px 5px 10px hsl(0deg, var(--saturate), 50%);
 }
 .unsat {
   position: absolute;
@@ -112,7 +111,7 @@ export default Vue.extend({
   content: attr(data-content);
   white-space: pre-line;
   z-index: 1;
-  background-color: hsl(0deg, 75%, 50%);
+  background-color: hsl(0deg, var(--saturate), 50%);
   padding: 5px;
   border-radius: 5px;
   cursor: pointer;
@@ -125,10 +124,10 @@ export default Vue.extend({
   pointer-events: all;
 }
 .card:hover .unsat:hover {
-  background-color: hsl(0deg, 75%, 40%);
+  background-color: hsl(0deg, var(--saturate), 40%);
 }
 .card:hover .unsat:active {
-  background-color: hsl(0deg, 75%, 30%);
+  background-color: hsl(0deg, var(--saturate), 30%);
 }
 .card[force-sat] .unsat,
 .card[force-sat] .unsat:hover,
@@ -153,7 +152,7 @@ export default Vue.extend({
 }
 [force-sat]:hover .unsat::before {
   border: solid transparent 2.25em;
-  border-bottom-color: hsl(0deg, 75%, 50%);
+  border-bottom-color: hsl(0deg, var(--saturate), 50%);
   border-left-width: 1.25em;
   border-right-width: 1.25em;
   display: inline-block;
@@ -165,9 +164,9 @@ export default Vue.extend({
   opacity: 1;
 }
 [force-sat] .unsat:hover::before {
-  border-bottom-color: hsl(0deg, 75%, 40%);
+  border-bottom-color: hsl(0deg, var(--saturate), 40%);
 }
 [force-sat] .unsat:active::before {
-  border-bottom-color: hsl(0deg, 75%, 30%);
+  border-bottom-color: hsl(0deg, var(--saturate), 30%);
 }
 </style>

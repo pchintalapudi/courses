@@ -72,7 +72,7 @@ export default Vue.extend({
 </script>
 <style scoped>
 .prior-credit-header {
-  background-color: #ffffff10;
+  background-color: hsla(var(--contrast), calc(var(--level) * 2));
   min-height: 2.5em;
   display: flex;
   align-items: center;
@@ -80,15 +80,15 @@ export default Vue.extend({
   padding: 0.5em;
 }
 .prior-credit-header:hover {
-  background-color: #ffffff18;
+  background-color: hsla(var(--contrast), calc(var(--level) * 3));
 }
 .spacer {
   flex-grow: 1;
 }
 .prior-credit-header::after {
   content: "";
-  border-right: solid white 2px;
-  border-top: solid white 2px;
+  border-right: solid hsl(var(--contrast)) 2px;
+  border-top: solid hsl(var(--contrast)) 2px;
   height: 0.5em;
   width: 0.5em;
   transform: rotate(135deg);

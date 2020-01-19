@@ -20,8 +20,9 @@ body,
   padding: 0;
   height: 100vh;
   width: 100vw;
-  background-color: #121212;
-  color: hsl(0deg, 0%, 80%);
+  background-color: hsl(var(--background));
+  color: hsl(var(--contrast));
+  transition: background-color 1s, color 1s;
 }
 #app,
 #app input {
@@ -36,9 +37,23 @@ body,
   transition: stroke 150ms;
   opacity: 0.75;
   animation: draw 500ms ease-in-out 0ms 1 normal forwards;
-  stroke: hsl(240deg, 0%, 50%);
+  stroke: hsla(var(--contrast), calc(var(--level) * 10));
 }
 .c-req {
     stroke-dasharray: 0.3%;
+}
+#app.dark-mode {
+    --background: 0, 0%, 7%;
+    --contrast: 0, 0%, 93%;
+    --level: 0.05;
+    --saturate: 75%;
+    --lightness: 45%;
+}
+#app {
+    --background: 0, 0%, 100%;
+    --contrast: 0, 0%, 7%;
+    --level: 0.05;
+    --saturate: 75%;
+    --lightness: 50%;
 }
 </style>

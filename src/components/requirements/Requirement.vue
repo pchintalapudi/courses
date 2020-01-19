@@ -97,7 +97,7 @@ export default Vue.extend({
   top: calc(50% - var(--height));
   bottom: calc(50% - var(--height));
   width: 0.75em;
-  border: solid hsl(0, 0%, 80%) var(--height);
+  border: solid hsl(var(--contrast)) var(--height);
   transition: border-color 300ms, border-width 300ms, border-style 300ms,
     top 300ms, bottom 300ms, transform 300ms;
 }
@@ -137,7 +137,7 @@ export default Vue.extend({
   width: 100%;
   height: 2px;
   transform-origin: left;
-  background-color: #ffffff18;
+  background-color: hsla(var(--contrast), calc(var(--level) * 2));
   position: absolute;
   top: 100%;
   left: 0;

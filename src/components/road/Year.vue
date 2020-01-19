@@ -155,7 +155,7 @@ export default Vue.extend({
 }
 .year-header,
 .quarter-header {
-  background-color: #ffffff10;
+  background-color: hsla(var(--contrast), calc(var(--level) * 2));
   min-height: 2.5em;
   display: flex;
   align-items: center;
@@ -164,7 +164,7 @@ export default Vue.extend({
 }
 .year-header:hover,
 .quarter-header:hover {
-  background-color: #ffffff18;
+  background-color: hsla(var(--contrast), calc(var(--level) * 4));
 }
 .spacer {
   flex-grow: 1;
@@ -172,8 +172,8 @@ export default Vue.extend({
 .year-header::after,
 .quarter-header::after {
   content: "";
-  border-right: solid white 2px;
-  border-top: solid white 2px;
+  border-right: solid hsl(var(--contrast)) 2px;
+  border-top: solid hsl(var(--contrast)) 2px;
   height: 0.5em;
   width: 0.5em;
   transform: rotate(135deg);
@@ -183,7 +183,7 @@ export default Vue.extend({
   transform: rotate(-45deg);
 }
 .quarter-header {
-  background-color: #ffffff08;
+  background-color: hsla(var(--contrast), calc(var(--level)));
   flex-grow: 0;
 }
 .quarter {

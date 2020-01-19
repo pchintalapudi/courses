@@ -1,13 +1,16 @@
 <template>
   <div class="search-bar" @click="view_results=false">
-    <input
-      type="text"
-      name="course-search"
-      id="course-search"
-      v-model="search_text"
-      @click.stop="view_results=true"
-      @keydown="key"
-    />
+    <label>
+        Search for a course
+      <input
+        type="text"
+        name="course-search"
+        id="course-search"
+        v-model="search_text"
+        @click.stop="view_results=true"
+        @keydown="key"
+      />
+    </label>
     <section class="results" v-if="view_results && search_results.length">
       <button
         v-for="result in search_results"
@@ -47,7 +50,10 @@ export default Vue.extend({
     },
     key(key: KeyboardEvent) {
       if (key.key === "Enter") {
-        if (this.search_results.length === 1 || this.timeout && this.search_results.length) {
+        if (
+          this.search_results.length === 1 ||
+          (this.timeout && this.search_results.length)
+        ) {
           this.show(this.search_results[0]);
         } else {
           this.timeout = window.setTimeout(() => (this.timeout = 0), 500);
@@ -62,9 +68,9 @@ export default Vue.extend({
 </script>
 <style scoped>
 #course-search {
-  border: solid #ffffff18 1px;
-  background-color: #ffffff10;
-  color: white;
+  border: solid hsla(var(--contrast), calc(var(--level) * 4)) 1px;
+  background-color: hsla(var(--contrast), calc(var(--level) * 2));
+  color: hsl(var(--contrast));
   border-radius: 5px;
   padding: 5px;
   margin: 5px;
@@ -80,25 +86,28 @@ export default Vue.extend({
   right: 0;
   overflow: auto;
   max-height: 50vh;
-  background-color: #202020;
-  border: solid #ffffff20 2px;
+  transition: background-color 1s;
+  background-color: hsl(var(--background));
+  border: solid hsla(var(--contrast), calc(var(--level) * 4)) 2px;
   z-index: 3;
 }
 .search-result {
   padding: 5px;
   overflow: hidden;
   background-color: transparent;
-  color: hsl(0, 0%, 80%);
+  color: hsla(var(--contrast), calc(var(--level) * 15));
   cursor: pointer;
   border: none;
   display: flex;
   width: 100%;
 }
 .search-result:hover {
-  background-color: #ffffff20;
+  color: hsla(var(--contrast), calc(var(--level) * 17.5));
+  background-color: hsla(var(--contrast), calc(var(--level) * 1));
 }
 .search-result:active {
-  background-color: #ffffff28;
+  color: hsla(var(--contrast), calc(var(--level) * 20));
+  background-color: hsla(var(--contrast), calc(var(--level) * 2));
 }
 .search-result > * {
   padding: 5px;

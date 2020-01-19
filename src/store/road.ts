@@ -30,7 +30,8 @@ const road_state = {
     course_roads: [] as Road[],
     viewing: -1,
     undo_stack: [] as Array<{ undo: () => void, redo: () => void }>,
-    idx: -1
+    idx: -1,
+    dark_mode: false
 };
 
 const SAVE_FILE = ".roads";
@@ -125,6 +126,8 @@ export const roads: Module<typeof road_state, any> = {
         _load(state, new_state: typeof state) {
             state.course_roads = new_state.course_roads;
             state.viewing = new_state.viewing;
+            state.dark_mode = new_state.dark_mode;
+            document.getElementById("app")!.classList.toggle("dark-mode", state.dark_mode);
         },
         _set_stack(state, new_stack: typeof state.undo_stack) {
             state.undo_stack = new_stack;
@@ -173,6 +176,10 @@ export const roads: Module<typeof road_state, any> = {
                 }
             }
             overrides.push(obj);
+        },
+        _toggle_mode(state) {
+            state.dark_mode = !state.dark_mode;
+            document.getElementById("app")!.classList.toggle("dark-mode", state.dark_mode);
         }
     },
     actions: {
@@ -314,6 +321,14 @@ export const roads: Module<typeof road_state, any> = {
                     commit("_toggle_override", obj);
                     dispatch("save");
                 }
+            });
+        },
+        toggle_mode({ commit, dispatch }) {
+            commit("_toggle_mode");
+            dispatch("save");
+            commit("_log", {
+                undo: () => { commit("_toggle_mode"); dispatch("save"); },
+                redo: () => { commit("_toggle_mode"); dispatch("save"); }
             });
         }
     },

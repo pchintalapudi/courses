@@ -96,7 +96,7 @@ export default Vue.extend({
   position: absolute;
   width: 100%;
   height: 2px;
-  background-color: #ffffff18;
+  background-color: hsla(var(--contrast), calc(var(--level) * 2));
   top: 100%;
   margin-left: -2em;
   padding-right: 2em;
@@ -145,7 +145,7 @@ h2::before {
   left: -1em;
   top: 40%;
   border: solid transparent 0.375em;
-  border-top: solid white 0.375em;
+  border-top: solid hsl(var(--contrast)) 0.375em;
   transform-origin: 0.375em 0.1875em;
   transition: transform 300ms;
 }
