@@ -69,6 +69,7 @@ export default Vue.extend({
 <style scoped>
 #course-search {
   border: solid hsla(var(--contrast), calc(var(--level) * 4)) 1px;
+  transition: background-color 1s, border-color 1s;
   background-color: hsla(var(--contrast), calc(var(--level) * 2));
   color: hsl(var(--contrast));
   border-radius: 5px;

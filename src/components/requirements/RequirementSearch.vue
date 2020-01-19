@@ -85,6 +85,7 @@ export default Vue.extend({
 <style scoped>
 #req-search {
   border: solid hsla(var(--contrast), calc(var(--level) * 4)) 1px;
+  transition: background-color 1s, border-color 1s;
   background-color: hsla(var(--contrast), calc(var(--level) * 2));
   color: hsl(var(--contrast));
   border-radius: 5px;
@@ -92,8 +93,8 @@ export default Vue.extend({
   margin: 5px;
 }
 #req-search:disabled {
-  background-color: #ffffff04;
-  border-color: #ffffff08;
+  background-color: hsla(var(--contrast), calc(var(--level)));
+  border-color: hsla(var(--contrast), calc(var(--level) * 2));
   cursor: not-allowed;
 }
 .search-bar {

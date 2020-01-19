@@ -44,7 +44,7 @@ export default Vue.extend({
     overrides: Array as () => any[]
   },
   data() {
-    return { collapsed: true };
+    return { collapsed: false };
   },
   computed: {
     is_req(): boolean {
