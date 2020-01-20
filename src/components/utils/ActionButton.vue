@@ -1,10 +1,20 @@
 <template>
-  <button @click="$emit('button-click')" :open-button="!close"><p>{{close ? "×" : "+"}}</p></button>
+  <button @click="button_click" :open-button="!close">
+    <p>{{close ? "×" : "+"}}</p>
+  </button>
 </template>
 <script lang="ts">
 import Vue from "vue";
 export default Vue.extend({
-  props: { close: Boolean }
+  props: { close: Boolean, stop: Boolean },
+  methods: {
+    button_click(event: MouseEvent) {
+      this.$emit("button-click");
+      if (this.stop) {
+        event.stopPropagation();
+      }
+    }
+  }
 });
 </script>
 <style scoped>
@@ -13,7 +23,7 @@ button[open-button]::before {
   font-size: 1.5em;
 }
 button[open-button] {
-    color: hsl(var(--contrast));
+  color: hsl(var(--contrast));
 }
 button {
   opacity: var(--button-visible);
@@ -51,6 +61,6 @@ button:active::before {
   opacity: 1;
 }
 p {
-    z-index: 1;
+  z-index: 1;
 }
 </style>

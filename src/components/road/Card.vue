@@ -13,6 +13,7 @@
       <close-button-vue
         @button-click="$emit('remove-course')"
         :close="true"
+        :stop="true"
         :title="`Remove ${course_id.name}`"
       ></close-button-vue>
     </h3>
@@ -51,7 +52,9 @@ export default Vue.extend({
       return this.truncate_name(this.name);
     },
     color(): string {
-      return `hsl(${compute_color(this.course_id.name)}deg, var(--saturate), var(--lightness))`;
+      return `hsl(${compute_color(
+        this.course_id.name
+      )}deg, var(--saturate), var(--lightness))`;
     },
     unsafe_sat(): boolean {
       return !this.course || this.year === -1;
@@ -92,6 +95,7 @@ export default Vue.extend({
   margin: 12.5px 0;
   --button-visible: 0;
   position: relative;
+  box-shadow: 1px 1px 5px black;
   transition: box-shadow 300ms;
 }
 .card > h3 {
@@ -135,19 +139,20 @@ export default Vue.extend({
   background-color: transparent;
   pointer-events: none;
 }
-[force-sat] .unsat::after, [force-sat] .unsat::before {
-    pointer-events: none;
-    opacity: 0;
-    content: "";
+[force-sat] .unsat::after,
+[force-sat] .unsat::before {
+  pointer-events: none;
+  opacity: 0;
+  content: "";
 }
 [force-sat]:hover .unsat::after {
   content: "!";
   font-size: 1.5em;
   display: inline-block;
-  transform: translate(-.925em, -1.25em);
+  transform: translate(-0.925em, -1.25em);
   opacity: 1;
   width: 1.5em;
-  height:1.5em;
+  height: 1.5em;
   text-align: center;
 }
 [force-sat]:hover .unsat::before {

@@ -51,7 +51,7 @@ export default Vue.extend({
     idx: Number
   },
   data() {
-    return { collapsed: false };
+    return { collapsed: true };
   },
   computed: {
     reqs(): Requirements | undefined {

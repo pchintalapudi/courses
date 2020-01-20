@@ -6,7 +6,7 @@
       <div v-if="full_collapse" class="collapsed-year">
         <mini-card-vue
           v-for="course in courses"
-          :key="`year ${idx} quarter ${course.quarter} course ${course.idx}`"
+          :key="`year ${idx} quarter ${course.quarter} course ${course.idx} name ${course.course.name}`"
           :course_id="course.course"
           @load-course="$emit('load-course', $event)"
           :year="idx"

@@ -175,8 +175,8 @@ export default Vue.extend({
         (ev.key === "d" || ev.key === "D") &&
         !ev.altKey
       ) {
-          this.toggle_mode();
-          ev.preventDefault();
+        this.toggle_mode();
+        ev.preventDefault();
       }
     };
     window.addEventListener("keydown", undo);
@@ -350,8 +350,13 @@ export default Vue.extend({
       quarter: 0 | 1 | 2 | 3;
       idx: number;
     }) {
+      const removedCourse =
+        year === -1
+          ? this.road!.prior_credit[idx].name
+          : this.road!.years[year][quarter][idx].name;
       this.graph_redraw({ year, quarter });
       this.$store.dispatch("roads/remove_course", { year, quarter, idx });
+      this.inspect(removedCourse);
       this.update_progresses();
       this.compute_sat();
     },
