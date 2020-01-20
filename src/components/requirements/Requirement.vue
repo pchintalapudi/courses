@@ -121,9 +121,9 @@ export default Vue.extend({
   left: -1em;
   top: 0.625em;
   border: solid transparent 0.375em;
-  border-top: solid white 0.375em;
+  border-top: solid hsl(var(--contrast)) 0.375em;
   transform-origin: 0.375em 0.1875em;
-  transition: transform 300ms;
+  transition: transform 300ms, border-top-color 1s;
 }
 [collapsed]::before {
   transform: rotate(-90deg);

@@ -19,7 +19,6 @@
     <div class="gutter"></div>
     <section>
       <span class="header">
-        <span class="toggles"></span>
         <search-vue class="search" @load-course="inspect"></search-vue>
       </span>
       <nav class="roads">
@@ -662,6 +661,7 @@ main {
 .header {
   display: flex;
   flex-flow: row nowrap;
+  padding: 0 10px;
 }
 .roads {
   display: flex;
@@ -689,7 +689,7 @@ main {
   --button-visible: 1;
 }
 .road-title[selected] {
-  background-color: #0088ff44;
+  background-color: hsla(var(--contrast), calc(var(--level) * 4));
 }
 .road-display,
 .no-roads {
@@ -710,39 +710,14 @@ i {
   align-items: center;
   padding: 10px;
 }
-.toggles {
-  flex: 1;
-}
-.toggle {
-  border: none;
-  background-color: transparent;
-  transition: background-color 300ms;
-  color: #ffffff88;
-  padding: 5px 10px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-.toggle[on] {
-  color: white;
-  background-color: #0088ff22;
-}
-.toggle:hover {
-  background-color: #0088ff44;
-}
-.toggle:active {
-  background-color: #0088ff88;
-}
 input {
   border: solid hsla(var(--contrast), calc(var(--level) * 4)) 1px;
   background-color: hsla(var(--contrast), calc(var(--level) * 2));
-  color: white;
+  color: hsl(var(--contrast));
   border-radius: 5px;
   padding: 5px;
   margin: 5px;
   width: 80%;
-}
-.search {
-  width: 500px;
 }
 .info {
   position: fixed;
@@ -750,6 +725,8 @@ input {
   height: 40vh;
   right: 0;
   bottom: 0;
+  transition: width 500ms, height 500ms;
+  user-select: none;
 }
 .info[max] {
   width: 75vw;

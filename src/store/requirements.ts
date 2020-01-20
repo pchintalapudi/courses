@@ -34,7 +34,7 @@ export const requirements: Module<typeof requirementState, any> = {
                     .toLowerCase().split(" ").filter(s => !ignore_set.has(s))) {
                     state.title_search_trie.get_or_set(word, new Set<Requirements>()).add(req);
                 }
-                state.title_search_trie.get_or_set(req.reqs.short_title,
+                state.title_search_trie.get_or_set(req.reqs.short_title.toLowerCase(),
                     new Set<Requirements>()).add(req);
             }
         },

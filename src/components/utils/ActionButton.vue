@@ -46,7 +46,7 @@ button::before {
   content: "";
   border-radius: 50%;
   background-color: #ff000088;
-  opacity: 0;
+  opacity: 0.25;
   transition: opacity 150ms;
   position: absolute;
   top: 0;

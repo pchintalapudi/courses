@@ -18,6 +18,14 @@
         <div class="grid">
           <h6>Units</h6>
           <p>{{unit_text}}</p>
+          <template v-if="course.gir_attribute">
+            <h6>Fulfills:</h6>
+            <p>GIR:{{course.gir_attribute}}</p>
+          </template>
+          <template v-if="course.hass_attribute">
+            <h6>HASS:</h6>
+            <p>{{course.hass_attribute + (course.communication_requirement ? ', ' + course.communication_requirement : '')}}</p>
+          </template>
           <h6>Offered</h6>
           <p>{{course ? offered.join() : "Loading Course Offerings..."}}</p>
           <h6>{{course && course.instructors ? course.instructors.length === 1 ? "Instructor" : "Instructors" : "Instructor(s)"}}</h6>
@@ -141,10 +149,10 @@ export default Vue.extend({
         : "Loading Course Hours...";
     },
     prerequisites(): string[] {
-      return requisite_parser(this.full_course.prerequisites!);
+      return requisite_parser(this.full_course.prerequisites!).filter(s => s.indexOf(".") !== -1);
     },
     corequisites(): string[] {
-      return requisite_parser(this.full_course.corequisites!);
+      return requisite_parser(this.full_course.corequisites!).filter(s => s.indexOf(".") !== -1);
     },
     prereq_text(): string {
       return this.req_text(this.full_course.prerequisites!);
@@ -157,7 +165,6 @@ export default Vue.extend({
     req_text(init: string) {
       return init
         .trim()
-        .replace("''permission of instructor''", "Permission of Instructor")
         .replace(/, /g, " and ")
         .replace(/\//g, " or ");
     },
@@ -186,9 +193,7 @@ export default Vue.extend({
       if (is_gir(req)) {
         req = de_gir(req)[0];
       }
-      if (req.indexOf("permission of instructor") === -1) {
-        this.$emit("push-course", req);
-      }
+      this.$emit("push-course", req);
     },
     computeColor(id: string) {
       return compute_color(id);
@@ -254,7 +259,6 @@ h6 {
   background-color: hsl(var(--background));
   border-radius: 5px;
   box-shadow: 0px 0px 7.5px black;
-  margin-right: 2em;
   z-index: 3;
 }
 h4,
