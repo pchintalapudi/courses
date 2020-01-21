@@ -149,10 +149,10 @@ export default Vue.extend({
         : "Loading Course Hours...";
     },
     prerequisites(): string[] {
-      return requisite_parser(this.full_course.prerequisites!).filter(s => s.indexOf(".") !== -1);
+      return requisite_parser(this.full_course.prerequisites!).filter(s => s.indexOf(".") !== -1 || s.includes("GIR"));
     },
     corequisites(): string[] {
-      return requisite_parser(this.full_course.corequisites!).filter(s => s.indexOf(".") !== -1);
+      return requisite_parser(this.full_course.corequisites!).filter(s => s.indexOf(".") !== -1 || s.includes("GIR"));
     },
     prereq_text(): string {
       return this.req_text(this.full_course.prerequisites!);
@@ -174,7 +174,7 @@ export default Vue.extend({
         : is_gir(id)
         ? ""
         : truncate
-        ? this.truncate_name(this.course!.title)
+        ? this.truncate_name(this.$store.getters["classes/class"](id)!.title)
         : this.course!.title;
     },
     truncate_name(name: string, chars = 20): string {
