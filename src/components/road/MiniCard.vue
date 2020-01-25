@@ -5,14 +5,24 @@
     :class="`mini-card ${course_id.name}`"
     :style="`background-color:${color};`"
     :id="JSON.stringify({year, quarter, idx})"
-  ><h3>{{course_id.name}}</h3></article>
+  >
+    <h3>{{course_id.name}}</h3>
+  </article>
 </template>
 <script lang="ts">
 import Vue from "vue";
 import { compute_color, CourseJSON } from "@/fireroad";
-import { ClassData } from '@/store/road';
+import { ClassData } from "@/store/road";
 export default Vue.extend({
-  props: { course_id: Object as () => ClassData, year: Number, quarter: Number, idx: Number },
+  props: {
+    course_id: Object as () => ClassData,
+    year: Number,
+    quarter: Number,
+    idx: Number
+  },
+  data() {
+    return { mouseDown: -1 };
+  },
   computed: {
     course(): CourseJSON | undefined {
       return this.$store.getters["classes/class"](this.course_id.name);
