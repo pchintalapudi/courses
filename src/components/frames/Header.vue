@@ -154,7 +154,7 @@ export default Vue.extend({
   background-color: hsla(var(--contrast), calc(var(--level) * 4));
 }
 input {
-    background-color: hsla(var(--background), calc(vaR(--level) * 2));
+    background-color: hsla(var(--background), calc(var(--level) * 2));
     color: hsl(var(--contrast));
     border-radius: 5px;
     padding: 5px;
