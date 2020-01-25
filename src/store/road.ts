@@ -3,7 +3,7 @@ import { Module } from 'vuex';
 export enum Quarter { FALL, IAP, SPRING, SUMMER }
 
 function make_year(): never[][] {
-    return [[], [], [], []];
+    return [[], [], [], [], []];
 }
 
 export interface ClassData {

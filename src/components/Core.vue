@@ -1,59 +1,24 @@
 <template>
   <main :dragging="dragging">
-    <aside class="requirements">
-      <requirement-search-vue :disable="!road" @load-requirement="add_requirement"></requirement-search-vue>
-      <section class="reqs" v-if="road">
-        <requirement-tree-vue
-          v-for="(req, idx) in requirements"
-          :key="`Requirement ${req.name}`"
-          :requirements="req"
-          :idx="idx"
-          @remove-requirement="remove_req(idx)"
-          @req-override="override"
-        ></requirement-tree-vue>
-      </section>
-      <section v-else>
-        <i>Add some requirements!</i>
-      </section>
-    </aside>
+    <requirements-vue
+      :road="road"
+      :requirements="road ? requirements : undefined"
+      :overrides="road ? overrides : undefined"
+      @update-progresses="update_progresses"
+    ></requirements-vue>
     <div class="gutter"></div>
     <section>
-      <span class="header">
-        <search-vue class="search" @load-course="inspect"></search-vue>
-      </span>
-      <nav class="roads">
-        <span class="road-list">
-          <template v-if="road">
-            <span
-              v-for="(name, idx) in road_names"
-              :key="idx"
-              class="road-title"
-              :selected="road.name===name"
-              @click="view(idx)"
-              @dblclick="edit(idx)"
-            >
-              <p class="road-title" v-if="editing!==idx">
-                <b>{{name}}</b>
-                <action-button-vue @button-click="remove_road(idx)" :close="true"></action-button-vue>
-              </p>
-              <input
-                type="text"
-                name="road-editor"
-                id="road-editor"
-                v-model="editing_text"
-                @keydown.enter="finish_editing"
-                @blur="finish_editing"
-                @click.stop
-                v-else
-              />
-            </span>
-          </template>
-          <i v-else>Create a new road! ---></i>
-        </span>
-        <action-button-vue @button-click="new_road" :close="false"></action-button-vue>
-      </nav>
+      <header-vue
+        :viewing="viewing"
+        :road="road"
+        @load-course="inspect"
+        @load-classes="load_classes"
+        @graph-redraw="graph_redraw"
+        @update-progresses="update_progresses"
+        @compute-sat="compute_sat"
+      ></header-vue>
       <div v-if="road" style="overflow:auto;">
-        <article class="road-display">
+        <article class="road-display" @mousemove="move" id="drag-surface">
           <svg id="graph" v-show="graph_mode" />
           <prior-credit-vue
             :classes="prior_credit"
@@ -78,6 +43,15 @@
             @drag-move="drag_move"
             @drag-end="drag_end"
           ></year-vue>
+          <mini-card-vue
+            class="dragged"
+            v-if="tainted"
+            :course_id="dragging"
+            :year="-1"
+            :quarter="-1"
+            :idx="-1"
+            :style="`transform:translate(${mouse.x}px,${mouse.y}px)`"
+          ></mini-card-vue>
         </article>
       </div>
       <article v-else class="no-roads">
@@ -105,20 +79,19 @@
 import Vue from "vue";
 import PriorCreditVue from "./road/PriorCredit.vue";
 import YearVue from "./road/Year.vue";
-import SearchVue from "./road/Search.vue";
-import InfoVue from "./road/Info.vue";
-import RequirementSearchVue from "./requirements/RequirementSearch.vue";
-import RequirementTreeVue from "./requirements/RequirementTree.vue";
+import InfoVue from "./frames/Info.vue";
 import ActionButtonVue from "./utils/ActionButton.vue";
+import HeaderVue from "./frames/Header.vue";
+import RequirementsVue from "./frames/Requirements.vue";
+import MiniCardVue from "./road/MiniCard.vue";
 import {
   CourseJSON,
-  RequirementTitles,
   RoadJSON,
   Class,
   is_full_course,
   FullCourseJSON
 } from "@/fireroad";
-import { Quarter, Road, ClassData, RequirementData } from "@/store/road";
+import { Road, ClassData, RequirementData } from "@/store/road";
 import { graph_untrack, graph_track } from "@/dom/graph";
 import { proper_requisite_parse } from "@/fireroad/demystify";
 export default Vue.extend({
@@ -129,11 +102,11 @@ export default Vue.extend({
   components: {
     PriorCreditVue,
     YearVue,
-    SearchVue,
     InfoVue,
-    RequirementSearchVue,
-    RequirementTreeVue,
-    ActionButtonVue
+    ActionButtonVue,
+    HeaderVue,
+    RequirementsVue,
+    MiniCardVue
   },
   async mounted() {
     await this.$store.dispatch("roads/load");
@@ -192,8 +165,6 @@ export default Vue.extend({
   },
   data() {
     return {
-      editing: -1,
-      editing_text: "Untitled",
       inspecting: "",
       inspection_history: [] as string[],
       maximize_info: false,
@@ -206,27 +177,14 @@ export default Vue.extend({
       dragging: undefined as
         | undefined
         | { year: number; quarter: 0 | 1 | 2 | 3; idx: number; name: string },
-      tainted: false
+      tainted: false,
+      mouse: { x: 0, y: 0 },
+      mouse_update_queued: false
     };
-  },
-  watch: {
-    editing_text(next) {
-      if (this.editing > -1) {
-        this.$store.dispatch("roads/update_name", {
-          road: this.editing,
-          name: this.editing_text
-        });
-      }
-    }
   },
   computed: {
     viewing(): number {
       return this.$store.state.roads.viewing;
-    },
-    road_names(): string[] {
-      return this.$store.state.roads.course_roads.map(
-        (road: Road) => road.name
-      );
     },
     road(): Road | undefined {
       return this.$store.getters["roads/road"];
@@ -284,42 +242,6 @@ export default Vue.extend({
     }
   },
   methods: {
-    finish_editing() {
-      this.editing = -1;
-      this.$store.dispatch("roads/save");
-    },
-    new_road(input: any) {
-      this.graph_redraw();
-      if (this.editing !== -1) {
-        this.$store.dispatch("roads/save");
-      }
-      this.editing = this.$store.state.roads.course_roads.length;
-      this.editing_text = "Untitled";
-      this.$store.dispatch("roads/new_road", this.editing_text);
-      this.compute_sat();
-    },
-    remove_road(idx: number) {
-      this.graph_redraw();
-      this.$store.dispatch("roads/delete_road", idx);
-      this.compute_sat();
-    },
-    view(idx: number) {
-      if (idx !== this.viewing) {
-        this.graph_redraw();
-        this.$store.dispatch("roads/view", idx);
-        if (this.editing !== -1) {
-          this.$store.dispatch("roads/save");
-        }
-        this.editing = -1;
-        this.load_classes();
-        this.update_progresses();
-        this.compute_sat();
-      }
-    },
-    edit(idx: number) {
-      this.editing = idx;
-      this.editing_text = this.$store.state.roads.course_roads[idx].name;
-    },
     inspect(course: string) {
       this.$store.dispatch("classes/load", course);
       this.maximize_info = !!this.inspecting && this.maximize_info;
@@ -384,27 +306,7 @@ export default Vue.extend({
         Math.max(0, this.inspect_index - 1)
       ];
     },
-    add_requirement(req: string) {
-      this.$store.dispatch("requirements/progress", {
-        reqs: [req],
-        progressOverrides: this.overrides,
-        courses: this.road_json
-      });
-      this.$store.dispatch("roads/add_requirement", req);
-    },
-    remove_req(idx: number) {
-      this.$store.dispatch("roads/remove_requirement", idx);
-    },
-    override(obj: any) {
-      const idx = obj.idx;
-      this.$store.dispatch("roads/toggle_override", obj);
-      this.$store.dispatch("requirements/progress", {
-        reqs: [this.requirements[idx].name],
-        progressOverrides: this.overrides,
-        courses: this.road_json
-      });
-    },
-    update_progresses() {
+    update_progresses(progress = -1) {
       if (!this.progress_update) {
         if (!this.$store.state.classes.manifest_tracker) {
           this.progress_update = window.setTimeout(() => {
@@ -413,7 +315,10 @@ export default Vue.extend({
           }, 1000);
         } else {
           this.$store.dispatch("requirements/progress", {
-            reqs: this.requirements.map(r => r.name),
+            reqs:
+              progress === -1
+                ? this.requirements.map(r => r.name)
+                : [this.requirements[progress].name],
             progressOverrides: this.overrides,
             courses: this.road_json
           });
@@ -513,7 +418,7 @@ export default Vue.extend({
       const draw = [] as Array<
         [{ year: number; quarter: number; idx: number }, FullCourseJSON, string]
       >;
-      const MAX_DRAW_PER_FRAME = 20;
+      const MAX_DRAW_PER_FRAME = 10;
       this.cycling.forEach(id => {
         if (draw.length < MAX_DRAW_PER_FRAME) {
           const course: {
@@ -665,6 +570,20 @@ export default Vue.extend({
       }
       this.dragging = undefined;
       this.tainted = false;
+    },
+    move(evt: MouseEvent) {
+      if (!this.mouse_update_queued) {
+          const target = evt.target as Element;
+        this.$nextTick(() => {
+          const offset = document
+            .getElementById("drag-surface")!
+            .getBoundingClientRect();
+          this.mouse.x = evt.x - offset.left;
+          this.mouse.y = evt.y - offset.top;
+          this.mouse_update_queued = false;
+        });
+        this.mouse_update_queued = true;
+      }
     }
   }
 });
@@ -702,39 +621,6 @@ main {
   flex: 0.74;
   display: flex;
   flex-flow: column nowrap;
-}
-.header {
-  display: flex;
-  flex-flow: row nowrap;
-  padding: 0 10px;
-}
-.roads {
-  display: flex;
-  flex-flow: row nowrap;
-  background-color: hsla(var(--contrast), var(--level));
-}
-.road-list {
-  display: flex;
-  flex-flow: row wrap;
-  flex: 1;
-  overflow: auto;
-}
-.road-title {
-  flex-basis: 150px;
-  flex-grow: 0;
-  flex-shrink: 0;
-  overflow: hidden;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  --button-visible: 0;
-  padding: 5px;
-}
-.road-title:hover {
-  --button-visible: 1;
-}
-.road-title[selected] {
-  background-color: hsla(var(--contrast), calc(var(--level) * 4));
 }
 .road-display,
 .no-roads {
@@ -787,5 +673,15 @@ input {
   height: 100%;
   pointer-events: none;
   z-index: 0;
+}
+.dragged {
+  pointer-events: none;
+  opacity: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: center;
+  margin-left: -2.5em;
+  margin-top: -1.25em;
 }
 </style>
