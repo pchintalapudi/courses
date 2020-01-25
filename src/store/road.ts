@@ -3,7 +3,7 @@ import { Module } from 'vuex';
 export enum Quarter { FALL, IAP, SPRING, SUMMER }
 
 function make_year(): never[][] {
-    return [[], [], [], [], []];
+    return [[], [], [], []];
 }
 
 export interface ClassData {
@@ -19,7 +19,7 @@ export interface RequirementData {
 
 // tslint:disable-next-line: max-classes-per-file
 export class Road {
-    public years = [make_year(), make_year(), make_year(), make_year()] as ClassData[][][];
+    public years = [make_year(), make_year(), make_year(), make_year(), make_year()] as ClassData[][][];
     public prior_credit: ClassData[] = [];
     public requirements: RequirementData[] = [];
 
@@ -217,6 +217,24 @@ export const roads: Module<typeof road_state, any> = {
                 redo: () => { commit("_delete_road", idx); dispatch("save"); }
             });
             dispatch("save");
+        },
+        add_year({ state, commit, dispatch }) {
+            const idx = state.course_roads[state.viewing].years.length;
+            commit("_add_year");
+            dispatch("save");
+            commit("_log", {
+                undo: () => { commit("_remove_year", idx); dispatch("save"); },
+                redo: () => { commit("_add_year"); dispatch("save"); }
+            });
+        },
+        remove_year({ state, commit, dispatch }, idx: number) {
+            const year = state.course_roads[state.viewing].years[idx];
+            commit("_remove_year", idx);
+            dispatch("save");
+            commit("_log", {
+                undo: () => { commit("_splice_year", { idx, year }); dispatch("save"); },
+                redo: () => { commit("_remove_year", idx); dispatch("save"); }
+            });
         },
         add_course({ state, commit, dispatch },
             pack: { year: number, quarter: number, course: string }) {

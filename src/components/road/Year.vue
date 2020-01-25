@@ -14,6 +14,7 @@
           @drag-start="$emit('drag-start', $event)"
         ></mini-card-vue>
       </div>
+      <close-button-vue @button-click="$emit('remove-year', idx)" :close="true"></close-button-vue>
     </span>
     <article v-if="!full_collapse" class="year-body">
       <section
@@ -67,9 +68,10 @@
 import Vue from "vue";
 import CardVue from "./Card.vue";
 import MiniCardVue from "./MiniCard.vue";
+import CloseButtonVue from '@/components/utils/ActionButton.vue';
 import { Road, ClassData } from "@/store/road";
 export default Vue.extend({
-  components: { MiniCardVue, CardVue },
+  components: { MiniCardVue, CardVue, CloseButtonVue },
   props: {
     year: Array as () => ClassData[][],
     idx: Number,
@@ -202,6 +204,7 @@ export default Vue.extend({
   width: 0.5em;
   transform: rotate(135deg);
   transition: transform 300ms;
+  margin: 0 10px;
 }
 [collapsed]::after {
   transform: rotate(-45deg);

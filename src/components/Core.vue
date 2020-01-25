@@ -2,7 +2,7 @@
   <main :dragging="dragging">
     <requirements-vue
       :road="road"
-      :requirements="road ? requirements : undefined"
+      :requirements="road ? road.requirements : undefined"
       :overrides="road ? overrides : undefined"
       @update-progresses="update_progresses"
     ></requirements-vue>
@@ -21,7 +21,7 @@
         <article class="road-display" @mousemove="move" id="drag-surface">
           <svg id="graph" v-show="graph_mode" />
           <prior-credit-vue
-            :classes="prior_credit"
+            :classes="road.prior_credit"
             :placing="inspecting"
             @remove-course="remove_course"
             @graph-redraw="graph_redraw"
@@ -30,12 +30,13 @@
             @drag-end="drag_end"
           ></prior-credit-vue>
           <year-vue
-            v-for="(year, idx) in years"
+            v-for="(year, idx) in road.years"
             :key="`year ${idx}`"
             :year="year"
             :idx="idx"
             :placing="inspecting"
             :allowed="allowed"
+            @remove-year="remove_year"
             @remove-course="remove_course"
             @graph-redraw="graph_redraw"
             @force-sat="toggle_sat($event)"
@@ -43,6 +44,9 @@
             @drag-move="drag_move"
             @drag-end="drag_end"
           ></year-vue>
+          <div class="add-year">
+            <action-button-vue @button-click="add_year" :close="false"></action-button-vue>
+          </div>
           <mini-card-vue
             class="dragged"
             v-if="tainted"
@@ -189,12 +193,6 @@ export default Vue.extend({
     road(): Road | undefined {
       return this.$store.getters["roads/road"];
     },
-    years(): ClassData[][][] {
-      return this.road!.years;
-    },
-    prior_credit(): ClassData[] {
-      return this.road!.prior_credit;
-    },
     inspect_course(): CourseJSON | undefined {
       return this.$store.getters["classes/class"](this.inspecting);
     },
@@ -211,25 +209,22 @@ export default Vue.extend({
           ]
         : undefined;
     },
-    requirements(): RequirementData[] {
-      return this.road!.requirements;
-    },
     courses(): ClassData[] {
-      return this.years
-        .flatMap(s => s.flatMap(a => a))
-        .concat(this.prior_credit);
+      return this.road!.years.flatMap(s => s.flatMap(a => a)).concat(
+        this.road!.prior_credit
+      );
     },
     road_json(): RoadJSON {
-      const priors = this.prior_credit.map((s, i) =>
+      const priors = this.road!.prior_credit.map((s, i) =>
         this.make_class(s, 0, -1, i)
       );
       const classes = priors.concat(
-        this.years.flatMap((arr, i) =>
+        this.road!.years.flatMap((arr, i) =>
           arr.flatMap((s, j) => s.map((id, k) => this.make_class(id, i, j, k)))
         )
       );
       return {
-        coursesOfStudy: this.requirements.map(r => r.name),
+        coursesOfStudy: this.road!.requirements.map(r => r.name),
         progressOverrides: this.overrides,
         selectedSubjects: classes
       };
@@ -254,6 +249,12 @@ export default Vue.extend({
     },
     toggle_max() {
       this.maximize_info = !this.maximize_info;
+    },
+    add_year() {
+      this.$store.dispatch("roads/add_year");
+    },
+    remove_year(idx: number) {
+      this.$store.dispatch("roads/remove_year", idx);
     },
     place(idx: number, i: number) {
       if (this.inspecting) {
@@ -317,8 +318,8 @@ export default Vue.extend({
           this.$store.dispatch("requirements/progress", {
             reqs:
               progress === -1
-                ? this.requirements.map(r => r.name)
-                : [this.requirements[progress].name],
+                ? this.road!.requirements.map(r => r.name)
+                : [this.road!.requirements[progress].name],
             progressOverrides: this.overrides,
             courses: this.road_json
           });
@@ -366,7 +367,7 @@ export default Vue.extend({
       }>;
       if (year === -1) {
         courses.push(
-          ...this.prior_credit.map((course, idx) => ({
+          ...this.road!.prior_credit.map((course, idx) => ({
             year: -1,
             quarter: 0,
             idx,
@@ -375,7 +376,7 @@ export default Vue.extend({
         );
       } else {
         courses.push(
-          ...this.years[year].slice(quarter).flatMap((c, q) =>
+          ...this.road!.years[year].slice(quarter).flatMap((c, q) =>
             c.map((course, idx) => ({
               year,
               quarter: quarter + q,
@@ -386,7 +387,7 @@ export default Vue.extend({
         );
       }
       courses.push(
-        ...this.years.slice(++year).flatMap((yc, y) =>
+        ...this.road!.years.slice(++year).flatMap((yc, y) =>
           yc.flatMap((qc, q) =>
             qc.map((course, idx) => ({
               year: year + y,
@@ -461,7 +462,7 @@ export default Vue.extend({
     },
     _sat_recompute() {
       const course_set = new Set<string>();
-      for (const course of this.prior_credit) {
+      for (const course of this.road!.prior_credit) {
         course_set.add(course.name);
         const full_course = this.$store.getters["classes/class"](
           course.name
@@ -480,10 +481,10 @@ export default Vue.extend({
           full_course.joint_subjects.forEach(c => course_set.add(c));
         }
       }
-      for (let i = 0; i < this.years.length; i++) {
-        for (let j = 0; j < this.years[i].length; j++) {
+      for (let i = 0; i < this.road!.years.length; i++) {
+        for (let j = 0; j < this.road!.years[i].length; j++) {
           const unsat = [] as string[];
-          for (const course of this.years[i][j]) {
+          for (const course of this.road!.years[i][j]) {
             const full_course = this.$store.getters["classes/class"](
               course.name
             ) as FullCourseJSON;
@@ -503,12 +504,12 @@ export default Vue.extend({
               unsat.push("");
             }
           }
-          for (const course of this.years[i][j]) {
+          for (const course of this.road!.years[i][j]) {
             course_set.add(course.name);
           }
-          for (let k = 0; k < this.years[i][j].length; k++) {
+          for (let k = 0; k < this.road!.years[i][j].length; k++) {
             const full_course = this.$store.getters["classes/class"](
-              this.years[i][j][k].name
+              this.road!.years[i][j][k].name
             ) as FullCourseJSON;
             if (full_course.corequisites) {
               const fail_coreq = proper_requisite_parse(
@@ -573,7 +574,7 @@ export default Vue.extend({
     },
     move(evt: MouseEvent) {
       if (!this.mouse_update_queued) {
-          const target = evt.target as Element;
+        const target = evt.target as Element;
         this.$nextTick(() => {
           const offset = document
             .getElementById("drag-surface")!
@@ -641,15 +642,6 @@ i {
   align-items: center;
   padding: 10px;
 }
-input {
-  border: solid hsla(var(--contrast), calc(var(--level) * 4)) 1px;
-  background-color: hsla(var(--contrast), calc(var(--level) * 2));
-  color: hsl(var(--contrast));
-  border-radius: 5px;
-  padding: 5px;
-  margin: 5px;
-  width: 80%;
-}
 .info {
   position: fixed;
   width: 30vw;
@@ -662,10 +654,6 @@ input {
 .info[max] {
   width: 75vw;
   height: 100vh;
-}
-.reqs {
-  overflow: auto;
-  flex: 1;
 }
 #graph {
   position: absolute;
@@ -683,5 +671,15 @@ input {
   transform-origin: center;
   margin-left: -2.5em;
   margin-top: -1.25em;
+}
+.add-year {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    padding: 1em;
+}
+.add-year>* {
+    transform: scale(2, 2);
 }
 </style>

@@ -98,7 +98,7 @@ export default Vue.extend({
   --button-visible: 0;
   position: relative;
   box-shadow: 1px 1px 5px black;
-  transition: box-shadow 300ms;
+  transition: box-shadow 300ms, background-color 1s;
   cursor: grab;
 }
 .card > h3 {

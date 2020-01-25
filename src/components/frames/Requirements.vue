@@ -51,3 +51,9 @@ export default Vue.extend({
   }
 });
 </script>
+<style scoped>
+.reqs {
+  overflow: auto;
+  flex: 1;
+}
+</style>

@@ -45,6 +45,7 @@ export default Vue.extend({
   width: 5em;
   height: 2.5em;
   cursor: grab;
+  transition: background-color 1s;
 }
 .mini-card > h3 {
   display: flex;
