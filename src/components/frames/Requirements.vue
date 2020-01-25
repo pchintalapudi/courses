@@ -11,21 +11,24 @@
         @req-override="override"
       ></requirement-tree-vue>
     </section>
-    <section v-else>
+    <section class="reqs" v-else>
       <i>Add some requirements!</i>
     </section>
+    <notes-vue :road="road"></notes-vue>
   </aside>
 </template>
 <script lang="ts">
 import Vue from "vue";
 import RequirementTreeVue from "../requirements/RequirementTree.vue";
 import RequirementSearchVue from "../requirements/RequirementSearch.vue";
+import NotesVue from "./Notes.vue";
 import { Road } from "@/store/road";
 import { Requirements } from "@/store/requirements";
 export default Vue.extend({
   components: {
     RequirementTreeVue,
-    RequirementSearchVue
+    RequirementSearchVue,
+    NotesVue
   },
   props: {
     road: Object as () => Road | undefined,
@@ -55,5 +58,8 @@ export default Vue.extend({
 .reqs {
   overflow: auto;
   flex: 1;
+}
+.notes {
+    flex: 1;
 }
 </style>

@@ -153,4 +153,12 @@ export default Vue.extend({
 .road-title[selected] {
   background-color: hsla(var(--contrast), calc(var(--level) * 4));
 }
+input {
+    background-color: hsla(var(--background), calc(vaR(--level) * 2));
+    color: hsl(var(--contrast));
+    border-radius: 5px;
+    padding: 5px;
+    width: 125px;
+    border: solid hsla(var(--contrast), calc(var(--level) * 4)) 2px;
+}
 </style>

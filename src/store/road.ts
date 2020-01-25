@@ -22,6 +22,7 @@ export class Road {
     public years = [make_year(), make_year(), make_year(), make_year(), make_year()] as ClassData[][][];
     public prior_credit: ClassData[] = [];
     public requirements: RequirementData[] = [];
+    public notes = "";
 
     public constructor(public name: string) { }
 }
@@ -124,6 +125,11 @@ export const roads: Module<typeof road_state, any> = {
             course_roads[viewing].requirements.splice(idx, 1);
         },
         _load(state, new_state: typeof state) {
+            for (const road of new_state.course_roads) {
+                if (!road.notes) {
+                    road.notes = "";
+                }
+            }
             state.course_roads = new_state.course_roads;
             state.viewing = new_state.viewing;
             state.dark_mode = new_state.dark_mode;
