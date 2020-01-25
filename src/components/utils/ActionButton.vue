@@ -1,5 +1,5 @@
 <template>
-  <button @click="button_click" :open-button="!close">
+  <button @click.stop="button_click" @mousedown.stop @mouseup.stop :open-button="!close">
     <p>{{close ? "×" : "+"}}</p>
   </button>
 </template>

@@ -1,6 +1,6 @@
 <template>
   <article class="info-card">
-    <span class="head" @dblclick="$emit('toggle-max')" :style="`--bg-color:${computeColor(id)}`">
+    <span class="head" @dblclick="$emit('toggle-max')" :style="`--bg-color:${compute_color(id)}`">
       <h3>
         <button v-if="idx > 0" class="prev" @click="$emit('prev-course')">
           <div></div>
@@ -35,7 +35,7 @@
           <h6>Average Rating</h6>
           <p>{{is_full ? `${full_course.rating === undefined ? '---' : full_course.rating}/7.0` : "Loading Course Ratings..."}}</p>
           <h6>Hours</h6>
-          <p>{{hourText}}</p>
+          <p>{{hour_text}}</p>
         </div>
         <h5>Description</h5>
         <div
@@ -48,7 +48,7 @@
           <article
             v-for="prereq in prerequisites"
             :key="prereq"
-            :style="`--bg-color:${computeColor(prereq)}`"
+            :style="`--bg-color:${compute_color(prereq)}`"
             :title="title(prereq, false)"
             @click="navigate(prereq)"
           >
@@ -63,7 +63,7 @@
           <article
             v-for="coreq in corequisites"
             :key="coreq"
-            :style="`--bg-color:${computeColor(coreq)}`"
+            :style="`--bg-color:${compute_color(coreq)}`"
             @click="navigate(coreq)"
           >
             <h6>{{coreq}}</h6>
@@ -81,7 +81,7 @@ import {
   CourseJSON,
   is_full_course,
   FullCourseJSON,
-  compute_color
+  compute_color as color
 } from "@/fireroad";
 import { Quarter } from "@/store/road";
 import { is_gir, requisite_parser, de_gir } from "@/fireroad/demystify";
@@ -125,7 +125,7 @@ export default Vue.extend({
       }
       return out;
     },
-    hourText(): string {
+    hour_text(): string {
       return this.is_full
         ? `${
             this.full_course.in_class_hours !== undefined &&
@@ -195,8 +195,8 @@ export default Vue.extend({
       }
       this.$emit("push-course", req);
     },
-    computeColor(id: string) {
-      return compute_color(id);
+    compute_color(id: string) {
+      return color(id);
     }
   }
 });

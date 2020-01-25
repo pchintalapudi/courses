@@ -116,11 +116,11 @@ class ReqHeader {
     }
 }
 
-export function properRequisiteParse(requisites: string): ReqHeader {
-    return new ReqHeader(_properRequisiteParse(requisites, 0)[0]);
+export function proper_requisite_parse(requisites: string): ReqHeader {
+    return new ReqHeader(_proper_requisite_parse(requisites, 0)[0]);
 }
 
-function _properRequisiteParse(requisites: string, idx: number): [string | ReqCombo, number] {
+function _proper_requisite_parse(requisites: string, idx: number): [string | ReqCombo, number] {
     const building = [] as string[];
     const built = [] as Array<string | ReqCombo>;
     let split = "";
@@ -136,7 +136,7 @@ function _properRequisiteParse(requisites: string, idx: number): [string | ReqCo
             building.length = 0;
             split = char;
         } else if (char === "(") {
-            const build = _properRequisiteParse(requisites, idx + 1);
+            const build = _proper_requisite_parse(requisites, idx + 1);
             idx = build[1];
             built.push(build[0]);
         } else if (char === ")") {
@@ -150,7 +150,7 @@ function _properRequisiteParse(requisites: string, idx: number): [string | ReqCo
     return [split ? new ReqCombo(split === "/", final) : final[0], idx];
 }
 
-(window as any).reqparse = properRequisiteParse;
+(window as any).reqparse = proper_requisite_parse;
 
 function is_gir(id: string) {
     return id.indexOf("GIR") !== -1;

@@ -1,10 +1,10 @@
 <template>
   <article
     :title="course ? name : 'Loading Course Name...'"
-    @click.stop="$emit('load-course', course_id.name)"
     :class="`mini-card ${course_id.name}`"
     :style="`background-color:${color};`"
     :id="JSON.stringify({year, quarter, idx})"
+    @mousedown="$emit('drag-start', {year, quarter, idx, name:course_id.name})"
   >
     <h3>{{course_id.name}}</h3>
   </article>
@@ -20,9 +20,6 @@ export default Vue.extend({
     quarter: Number,
     idx: Number
   },
-  data() {
-    return { mouseDown: -1 };
-  },
   computed: {
     course(): CourseJSON | undefined {
       return this.$store.getters["classes/class"](this.course_id.name);
@@ -31,7 +28,7 @@ export default Vue.extend({
       return this.course!.title;
     },
     color(): string {
-      return `hsl(${compute_color(this.course_id.name)}deg, 75%, 45%)`;
+      return `hsl(${compute_color(this.course_id.name)}deg, var(--saturate), var(--lightness))`;
     }
   }
 });
@@ -47,10 +44,14 @@ export default Vue.extend({
   align-items: center;
   width: 5em;
   height: 2.5em;
+  cursor: grab;
 }
 .mini-card > h3 {
   display: flex;
   flex-flow: row nowrap;
   justify-content: space-between;
+}
+.mini-card:active {
+    cursor: grabbing;
 }
 </style>

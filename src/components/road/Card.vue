@@ -1,12 +1,12 @@
 <template>
   <article
     :title="course ? name : 'Loading Course Name...'"
-    @click.stop="$emit('load-course', course_id.name)"
     :class="`card ${course_id.name}`"
     :style="`background-color:${color};`"
     :id="JSON.stringify({year, quarter, idx})"
     :unsat="unsafe_sat || course_id.force_sat ? false : !!course_id.unsat"
     :force-sat="!unsafe_sat && course_id.force_sat"
+    @mousedown="$emit('drag-start', {year, quarter, idx, name:course_id.name})"
   >
     <h3>
       {{course_id.name}}
@@ -24,6 +24,8 @@
         class="unsat"
         :title="unsafe_sat ? false : `Click to ${course_id.force_sat ? 'show' : 'hide'} warning`"
         @click.stop="$emit('force-sat', {year, quarter, idx})"
+        @mousedown.stop
+        @mouseup.stop
       >{{course_id.force_sat ? "" : "Missing:\n" + course_id.unsat}}</p>
     </transition>
   </article>
@@ -97,6 +99,7 @@ export default Vue.extend({
   position: relative;
   box-shadow: 1px 1px 5px black;
   transition: box-shadow 300ms;
+  cursor: grab;
 }
 .card > h3 {
   display: flex;
@@ -105,6 +108,9 @@ export default Vue.extend({
 }
 .card:hover {
   --button-visible: 1;
+}
+.card:active {
+    cursor: grabbing;
 }
 [unsat] {
   box-shadow: 0px 0px 5px 10px hsl(0deg, var(--saturate), 50%);

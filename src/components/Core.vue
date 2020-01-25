@@ -1,5 +1,5 @@
 <template>
-  <main>
+  <main :dragging="dragging">
     <aside class="requirements">
       <requirement-search-vue :disable="!road" @load-requirement="add_requirement"></requirement-search-vue>
       <section class="reqs" v-if="road">
@@ -25,7 +25,7 @@
         <span class="road-list">
           <template v-if="road">
             <span
-              v-for="(name, idx) in roadNames"
+              v-for="(name, idx) in road_names"
               :key="idx"
               class="road-title"
               :selected="road.name===name"
@@ -40,7 +40,7 @@
                 type="text"
                 name="road-editor"
                 id="road-editor"
-                v-model="editingText"
+                v-model="editing_text"
                 @keydown.enter="finish_editing"
                 @blur="finish_editing"
                 @click.stop
@@ -58,10 +58,11 @@
           <prior-credit-vue
             :classes="prior_credit"
             :placing="inspecting"
-            @load-course="inspect"
-            @place-course="place(-1, 0)"
             @remove-course="remove_course"
             @graph-redraw="graph_redraw"
+            @drag-start="drag_start"
+            @drag-move="drag_move"
+            @drag-end="drag_end"
           ></prior-credit-vue>
           <year-vue
             v-for="(year, idx) in years"
@@ -70,11 +71,12 @@
             :idx="idx"
             :placing="inspecting"
             :allowed="allowed"
-            @load-course="inspect"
-            @place-course="place(idx, $event)"
             @remove-course="remove_course"
             @graph-redraw="graph_redraw"
             @force-sat="toggle_sat($event)"
+            @drag-start="drag_start"
+            @drag-move="drag_move"
+            @drag-end="drag_end"
           ></year-vue>
         </article>
       </div>
@@ -84,7 +86,7 @@
     </section>
     <transition name="fade">
       <info-vue
-        v-if="inspecting"
+        v-if="!dragging && inspecting"
         class="info"
         :id="inspecting"
         :max="maximize_info"
@@ -118,7 +120,7 @@ import {
 } from "@/fireroad";
 import { Quarter, Road, ClassData, RequirementData } from "@/store/road";
 import { graph_untrack, graph_track } from "@/dom/graph";
-import { properRequisiteParse } from "@/fireroad/demystify";
+import { proper_requisite_parse } from "@/fireroad/demystify";
 export default Vue.extend({
   created() {
     this.$store.dispatch("classes/init");
@@ -191,7 +193,7 @@ export default Vue.extend({
   data() {
     return {
       editing: -1,
-      editingText: "Untitled",
+      editing_text: "Untitled",
       inspecting: "",
       inspection_history: [] as string[],
       maximize_info: false,
@@ -200,15 +202,19 @@ export default Vue.extend({
       cycle: 0,
       progress_update: 0,
       curvy: true,
-      sat_update: 0
+      sat_update: 0,
+      dragging: undefined as
+        | undefined
+        | { year: number; quarter: 0 | 1 | 2 | 3; idx: number; name: string },
+      tainted: false
     };
   },
   watch: {
-    editingText(next) {
+    editing_text(next) {
       if (this.editing > -1) {
         this.$store.dispatch("roads/update_name", {
           road: this.editing,
-          name: this.editingText
+          name: this.editing_text
         });
       }
     }
@@ -217,7 +223,7 @@ export default Vue.extend({
     viewing(): number {
       return this.$store.state.roads.viewing;
     },
-    roadNames(): string[] {
+    road_names(): string[] {
       return this.$store.state.roads.course_roads.map(
         (road: Road) => road.name
       );
@@ -288,8 +294,8 @@ export default Vue.extend({
         this.$store.dispatch("roads/save");
       }
       this.editing = this.$store.state.roads.course_roads.length;
-      this.editingText = "Untitled";
-      this.$store.dispatch("roads/new_road", this.editingText);
+      this.editing_text = "Untitled";
+      this.$store.dispatch("roads/new_road", this.editing_text);
       this.compute_sat();
     },
     remove_road(idx: number) {
@@ -312,7 +318,7 @@ export default Vue.extend({
     },
     edit(idx: number) {
       this.editing = idx;
-      this.editingText = this.$store.state.roads.course_roads[idx].name;
+      this.editing_text = this.$store.state.roads.course_roads[idx].name;
     },
     inspect(course: string) {
       this.$store.dispatch("classes/load", course);
@@ -349,13 +355,13 @@ export default Vue.extend({
       quarter: 0 | 1 | 2 | 3;
       idx: number;
     }) {
-      const removedCourse =
+      const removed_course =
         year === -1
           ? this.road!.prior_credit[idx].name
           : this.road!.years[year][quarter][idx].name;
       this.graph_redraw({ year, quarter });
       this.$store.dispatch("roads/remove_course", { year, quarter, idx });
-      this.inspect(removedCourse);
+      this.inspect(removed_course);
       this.update_progresses();
       this.compute_sat();
     },
@@ -584,7 +590,7 @@ export default Vue.extend({
               return;
             }
             if (full_course.prerequisites) {
-              const fail_prereqs = properRequisiteParse(
+              const fail_prereqs = proper_requisite_parse(
                 full_course.prerequisites
               ).unsatisfied(course_set);
               unsat.push(fail_prereqs && `Prerequisites: ${fail_prereqs}`);
@@ -600,7 +606,7 @@ export default Vue.extend({
               this.years[i][j][k].name
             ) as FullCourseJSON;
             if (full_course.corequisites) {
-              const fail_coreq = properRequisiteParse(
+              const fail_coreq = proper_requisite_parse(
                 full_course.corequisites
               ).unsatisfied(course_set);
               unsat[k] = unsat[k]
@@ -626,6 +632,39 @@ export default Vue.extend({
     },
     toggle_mode() {
       this.$store.dispatch("roads/toggle_mode");
+    },
+    drag_start(pack: {
+      year: number;
+      quarter: 0 | 1 | 2 | 3;
+      idx: number;
+      name: string;
+    }) {
+      if (this.tainted) {
+        this.place(this.dragging!.year, this.dragging!.quarter);
+      }
+      this.dragging = pack;
+      this.inspect(pack.name);
+      this.tainted = false;
+    },
+    drag_move(pack: { year: number; quarter: number }) {
+      if (!this.tainted && this.dragging) {
+        this.tainted =
+          this.dragging.year !== pack.year ||
+          this.dragging.quarter !== pack.quarter;
+        if (this.tainted) {
+          this.remove_course(this.dragging);
+        }
+      }
+    },
+    drag_end(pack: { year: number; quarter: 0 | 1 | 2 | 3 }) {
+      if (this.inspecting && (!this.dragging || this.tainted)) {
+        this.place(pack.year, pack.quarter);
+      }
+      if (this.dragging && !this.tainted) {
+        this.inspect(this.dragging.name);
+      }
+      this.dragging = undefined;
+      this.tainted = false;
     }
   }
 });
@@ -642,6 +681,12 @@ main {
   display: flex;
   flex-flow: row nowrap;
   flex: 1;
+  --accept: pointer;
+}
+[dragging] {
+  user-select: none;
+  cursor: grabbing;
+  --accept: grabbing;
 }
 .gutter {
   background-color: hsla(var(--contrast), var(--level));

@@ -1,6 +1,6 @@
 <template>
   <article class="year">
-    <span class="year-header" @click="toggle_full" :collapsed="full_collapse">
+    <span class="year-header" :collapsed="full_collapse" @mouseup.stop="year_header_up">
       <b>{{`Year ${idx+1}`}}</b>
       <span class="spacer"></span>
       <div v-if="full_collapse" class="collapsed-year">
@@ -8,16 +8,22 @@
           v-for="course in courses"
           :key="`year ${idx} quarter ${course.quarter} course ${course.idx} name ${course.course.name}`"
           :course_id="course.course"
-          @load-course="$emit('load-course', $event)"
           :year="idx"
           :quarter="course.quarter"
           :idx="course.idx"
+          @drag-start="$emit('drag-start', $event)"
         ></mini-card-vue>
       </div>
     </span>
     <article v-if="!full_collapse" class="year-body">
-      <section v-for="(quarter, i) in year" :key="`year ${idx} quarter ${i}`" class="quarter">
-        <span class="quarter-header" @click="toggle_collapse(i)" :collapsed="collapsed[i]">
+      <section
+        v-for="(quarter, i) in year"
+        :key="`year ${idx} quarter ${i}`"
+        class="quarter"
+        @mouseup.stop="quarter_up(i)"
+        @mousemove="$emit('drag-move', {year:idx, quarter:i})"
+      >
+        <span class="quarter-header" :collapsed="collapsed[i]" @mouseup.stop="quarter_header_up(i)">
           <i>{{quarter_label(i)}}</i>
           <p>{{unit_count(i)}}</p>
           <p>{{hour_count(i)}}</p>
@@ -27,10 +33,10 @@
               v-for="(course, j) in quarter"
               :key="`year ${idx} quarter ${i} course ${j}`"
               :course_id="course"
-              @load-course="$emit('load-course', $event)"
               :year="idx"
               :quarter="i"
               :idx="j"
+              @drag-start="$emit('drag-start', $event)"
             ></mini-card-vue>
           </div>
         </span>
@@ -40,18 +46,17 @@
           :allowed="placing!==''&&allow(i)"
           :forbidden="placing!==''&&forbid(i)"
           :loading="placing!==''&&!allowed"
-          @click="$emit('place-course', i)"
         >
           <card-vue
             v-for="(course, j) in quarter"
             :key="`year ${idx} quarter ${i} course ${j}`"
             :course_id="course"
-            @load-course="$emit('load-course', $event)"
             @remove-course="remove(idx, i, j)"
             @force-sat="$emit('force-sat', $event)"
             :year="idx"
             :quarter="i"
             :idx="j"
+            @drag-start="$emit('drag-start', $event)"
           ></card-vue>
         </div>
       </section>
@@ -143,6 +148,25 @@ export default Vue.extend({
     toggle_full() {
       this.full_collapse = !this.full_collapse;
       this.$emit("graph-redraw", { year: this.idx, quarter: 0 });
+    },
+    year_header_up() {
+      if (this.placing) {
+          if (this.full_collapse) {
+              this.toggle_full();
+          }
+      } else {
+          this.toggle_full();
+      }
+    },
+    quarter_up(quarter: number) {
+      this.$emit("drag-end", { year: this.idx, quarter });
+    },
+    quarter_header_up(quarter: number) {
+      if (this.placing) {
+        this.quarter_up(quarter);
+      } else {
+          this.toggle_collapse(quarter);
+      }
     }
   }
 });
@@ -185,6 +209,7 @@ export default Vue.extend({
 .quarter-header {
   background-color: hsla(var(--contrast), calc(var(--level)));
   flex-grow: 0;
+  cursor: var(--accept);
 }
 .quarter {
   display: flex;
@@ -200,15 +225,15 @@ export default Vue.extend({
 }
 .quarter-classes[loading] {
   background-color: #ffff0022;
-  cursor: pointer;
+  cursor: var(--accept);
 }
 .quarter-classes[allowed] {
   background-color: #00ff0022;
-  cursor: pointer;
+  cursor: var(--accept);
 }
 .quarter-classes[forbidden] {
   background-color: #ff000022;
-  cursor: pointer;
+  cursor: var(--accept);
 }
 .quarter-classes[loading]:hover {
   background-color: #ffff0044;
