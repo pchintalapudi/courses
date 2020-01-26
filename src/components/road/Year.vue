@@ -68,7 +68,7 @@
 import Vue from "vue";
 import CardVue from "./Card.vue";
 import MiniCardVue from "./MiniCard.vue";
-import CloseButtonVue from '@/components/utils/ActionButton.vue';
+import CloseButtonVue from "@/components/utils/ActionButton.vue";
 import { Road, ClassData } from "@/store/road";
 export default Vue.extend({
   components: { MiniCardVue, CardVue, CloseButtonVue },
@@ -153,11 +153,11 @@ export default Vue.extend({
     },
     year_header_up() {
       if (this.placing) {
-          if (this.full_collapse) {
-              this.toggle_full();
-          }
-      } else {
+        if (this.full_collapse) {
           this.toggle_full();
+        }
+      } else {
+        this.toggle_full();
       }
     },
     quarter_up(quarter: number) {
@@ -167,7 +167,7 @@ export default Vue.extend({
       if (this.placing) {
         this.quarter_up(quarter);
       } else {
-          this.toggle_collapse(quarter);
+        this.toggle_collapse(quarter);
       }
     }
   }
@@ -187,6 +187,12 @@ export default Vue.extend({
   align-items: center;
   cursor: pointer;
   padding: 0.5em;
+}
+.year-header {
+  --button-visible: 0;
+}
+.year-header:hover {
+  --button-visible: 1;
 }
 .year-header:hover,
 .quarter-header:hover {

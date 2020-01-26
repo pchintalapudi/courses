@@ -14,7 +14,7 @@
             @click="view(idx)"
             @dblclick="edit(idx)"
           >
-            <p class="road-title" v-if="editing!==idx">
+            <p class="road-text" v-if="editing!==idx">
               <b>{{name}}</b>
               <action-button-vue @button-click="remove_road(idx)" :close="true"></action-button-vue>
             </p>
@@ -32,7 +32,7 @@
         </template>
         <i v-else>Create a new road! ---></i>
       </span>
-      <action-button-vue @button-click="new_road" :close="false"></action-button-vue>
+      <action-button-vue class="new-button" @button-click="new_road" :close="false"></action-button-vue>
     </nav>
   </section>
 </template>
@@ -137,21 +137,26 @@ export default Vue.extend({
   overflow: auto;
 }
 .road-title {
-  flex-basis: 150px;
-  flex-grow: 0;
-  flex-shrink: 0;
-  overflow: hidden;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  --button-visible: 0;
-  padding: 5px;
+    --button-visible: 0;
+    flex-basis: 150px;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: center;
 }
 .road-title:hover {
-  --button-visible: 1;
+    --button-visible: 1;
 }
 .road-title[selected] {
   background-color: hsla(var(--contrast), calc(var(--level) * 4));
+}
+.road-text {
+    display: flex;
+    flex: 1;
+    padding: 10px;
+}
+.road-text>:first-child {
+    flex: 1;
 }
 input {
     background-color: hsla(var(--background), calc(var(--level) * 2));
@@ -160,5 +165,8 @@ input {
     padding: 5px;
     width: 125px;
     border: solid hsla(var(--contrast), calc(var(--level) * 4)) 2px;
+}
+.new-button {
+    margin: auto 0;
 }
 </style>

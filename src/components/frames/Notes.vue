@@ -39,7 +39,7 @@ export default Vue.extend({
       }
     },
     notes() {
-        this.save();
+      this.save();
     }
   },
   computed: {
@@ -90,10 +90,20 @@ export default Vue.extend({
 #notes {
   background-color: hsl(var(--background));
   color: hsl(var(--contrast));
+  padding: 5px;
+  border: none;
 }
 p {
   cursor: pointer;
   margin: 0;
   flex-grow: 0;
+  padding: 10px;
+  transition: background-color 300ms;
+}
+p:hover {
+  background-color: hsla(var(--contrast), calc(var(--level) * 1));
+}
+p:active {
+  background-color: hsla(var(--contrast), calc(var(--level) * 2));
 }
 </style>
