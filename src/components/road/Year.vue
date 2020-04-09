@@ -6,7 +6,7 @@
       <div v-if="full_collapse" class="collapsed-year">
         <mini-card-vue
           v-for="course in courses"
-          :key="`year ${idx} quarter ${course.quarter} course ${course.idx} name ${course.course.name}`"
+          :key="course.key"
           :course_id="course.course"
           :year="idx"
           :quarter="course.quarter"
@@ -82,10 +82,33 @@ export default Vue.extend({
     return { collapsed: [false, true, false, true], full_collapse: false };
   },
   computed: {
-    courses(): Array<{ quarter: number; idx: number; course: ClassData }> {
-      return this.year.flatMap((c, quarter) =>
-        c.flatMap((course, idx) => ({ quarter, idx, course }))
-      );
+    courses(): Array<{
+      quarter: number;
+      idx: number;
+      key: string;
+      course: ClassData;
+    }> {
+      const out = [];
+      const map = new Map<string, number>();
+      for (let quarter = 0; quarter < this.year.length; quarter++) {
+        for (let idx = 0; idx < this.year[quarter].length; idx++) {
+          const course = this.year[quarter][idx];
+          if (!map.has(course.name)) {
+            map.set(course.name, 1);
+          } else {
+            map.set(course.name, map.get(course.name)! + 1);
+          }
+          out.push({
+            quarter,
+            idx,
+            key: `${this.idx} ${quarter} ${idx} ${map.get(
+              this.year[quarter][idx].name
+            )!}`,
+            course
+          });
+        }
+      }
+      return out;
     }
   },
   methods: {
