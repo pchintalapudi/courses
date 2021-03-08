@@ -144,6 +144,7 @@ export default Vue.extend({
       }
       const sum = this.year[quarter]
         .map(id => this.$store.getters["classes/class"](id.name).total_units)
+        .filter(id => id === id)
         .reduce((run, next) => run + next, 0);
       return `Units: ${sum}`;
     },
@@ -159,8 +160,8 @@ export default Vue.extend({
             ? cls.in_class_hours + cls.out_of_class_hours
             : Number.NaN
         );
-      const nan = hours.reduce((old, next) => old || Number.isNaN(next), false);
-      const sum = hours.reduce((old, next) => old + next || 0, 0);
+      const nan = hours.reduce((old, next) => old || next !== next, false);
+      const sum = hours.reduce((old, next) => old + (next || 0), 0);
       return `Hours: ${nan ? "≥" : ""}${Number(sum.toFixed(2))}`;
     },
     remove(year: number, quarter: number, idx: number) {
