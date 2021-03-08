@@ -366,30 +366,26 @@ export default Vue.extend({
         course: string;
       }>;
       if (year === -1) {
-        courses.push(
-          ...this.road!.prior_credit.map((course, idx) => ({
+        this.road!.prior_credit.forEach((course, idx) => courses.push({
             year: -1,
             quarter: 0,
             idx,
             course: course.name
-          }))
+          })
         );
       } else {
-        courses.push(
-          ...this.road!.years[year].slice(quarter).flatMap((c, q) =>
-            c.map((course, idx) => ({
+        this.road!.years[year].slice(quarter).forEach((c, q) =>
+            c.forEach((course, idx) => courses.push({
               year,
               quarter: quarter + q,
               idx,
               course: course.name
             }))
           )
-        );
       }
-      courses.push(
-        ...this.road!.years.slice(++year).flatMap((yc, y) =>
-          yc.flatMap((qc, q) =>
-            qc.map((course, idx) => ({
+      this.road!.years.slice(++year).forEach((yc, y) =>
+          yc.forEach((qc, q) =>
+            qc.forEach((course, idx) => courses.push({
               year: year + y,
               quarter: q,
               idx,
@@ -397,7 +393,6 @@ export default Vue.extend({
             }))
           )
         )
-      );
       return courses;
     },
     graph_detrack(year: number, quarter: number) {

@@ -28,11 +28,11 @@ export async function offline_update_all_requirements(valid_response: Requiremen
 }
 
 export async function offline_last_course_update(): Promise<Date> {
-    const last_up: string = await localForage.getItem(COURSE_METADATA);
+    const last_up: string = (await localForage.getItem(COURSE_METADATA))!;
     return last_up ? new Date(Date.parse(last_up)) : new Date(0);
 }
 export async function offline_last_requirement_update(): Promise<Date> {
-    const last_up: string = await localForage.getItem(REQUIREMENT_METADATA);
+    const last_up: string = (await localForage.getItem(REQUIREMENT_METADATA))!;
     return last_up ? new Date(Date.parse(last_up)) : new Date(0);
 }
 
